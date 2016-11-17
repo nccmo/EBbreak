@@ -60,7 +60,7 @@ def parse_bp_from_bam(input_bam, output_file, key_seq_size, min_major_clip_size,
             juncseq = read.seq[juncseq_start:juncseq_end]
 
             print >> hout, '\t'.join([juncChr_current, str(juncPos_current), juncDir_current, juncseq, 
-                                      read.qname + ("/1" if flags[6] == "1" else "/2"), str(read.mapq), str(right_clipping)])
+                                      read.qname + ("/1" if flags[6] == "1" else "/2"), str(read.mapq), str(right_clipping), str(alignmentSize_current)])
 
         if left_clipping >= min_major_clip_size:
 
@@ -77,7 +77,7 @@ def parse_bp_from_bam(input_bam, output_file, key_seq_size, min_major_clip_size,
             juncseq = my_seq.reverse_complement(read.seq[juncseq_start:juncseq_end])
 
             print >> hout, '\t'.join([juncChr_current, str(juncPos_current), juncDir_current, juncseq, 
-                                      read.qname + ("/1" if flags[6] == "1" else "/2"), str(read.mapq), str(left_clipping)])
+                                      read.qname + ("/1" if flags[6] == "1" else "/2"), str(read.mapq), str(left_clipping), str(alignmentSize_current)])
 
 
     bamfile.close()
@@ -95,6 +95,7 @@ def cluster_breakpoint(input_file, output_file, check_interval):
     key2read = {}
     key2mapq = {}
     key2clipsize = {}
+    key2alnsize = {}
     with open(input_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
@@ -102,13 +103,15 @@ def cluster_breakpoint(input_file, output_file, check_interval):
             if tmp_chr != F[0] or int(F[1]) - tmp_pos > check_interval:
                 del_list = []
                 for key in key2read:
-                    print >> hout, key + '\t' + ';'.join(key2read[key]) + '\t' + ';'.join(key2mapq[key]) + '\t' + ';'.join(key2clipsize[key])
+                    print >> hout, key + '\t' + ';'.join(key2read[key]) + '\t' + ';'.join(key2mapq[key]) + '\t' + \
+                                   ';'.join(key2clipsize[key]) + '\t' + ';'.join(key2alnsize[key])
                     del_list.append(key)
 
                 for key in del_list:
                     del key2read[key]
                     del key2mapq[key]
                     del key2clipsize[key]
+                    del key2alnsize[key]                
 
                 tmp_chr = F[0]  
                 tmp_pos = int(F[1])
@@ -118,14 +121,17 @@ def cluster_breakpoint(input_file, output_file, check_interval):
             if key not in key2read: key2read[key] = []
             if key not in key2mapq: key2mapq[key] = []
             if key not in key2clipsize: key2clipsize[key] = []
+            if key not in key2alnsize: key2alnsize[key] = []
 
             key2read[key].append(F[4])
             key2mapq[key].append(F[5])
             key2clipsize[key].append(F[6])
+            key2alnsize[key].append(F[7])
 
     # final flush
     for key in key2read:
-        print >> hout, key + '\t' + ';'.join(key2read[key]) + '\t' + ';'.join(key2mapq[key]) + '\t' + ';'.join(key2clipsize[key])
+        print >> hout, key + '\t' + ';'.join(key2read[key]) + '\t' + ';'.join(key2mapq[key]) + '\t' + \
+                       ';'.join(key2clipsize[key]) + '\t' + ';'.join(key2alnsize[key])
 
 
     hout.close()
