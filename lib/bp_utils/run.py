@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import sys, os, gzip, subprocess
-import parse, filt
+import parse, filt, contig
 
 def parse_main(args):
 
@@ -109,15 +109,21 @@ def merge_control_main(args):
 
 def filt_main(args):
 
-    """
     filt.filter_by_control(args.tumor_bp_file, args.output_file + ".tmp.filt1.txt", args.matched_control_bp_file, args.merged_control_file,
                            args.min_tumor_num_thres, args.min_median_mapq, args.min_max_clip_size, args.max_control_num_thres)
  
-    filt.filter_by_allele_freq(args.output_file + ".tmp.filt1.txt", args.output_file + ".tmp.filt2.txt", 
+    filt.filter_by_allele_freq(args.output_file + ".tmp.filt1.txt", args.output_file, 
                                args.tumor_bam, args.matched_control_bam, 
                                args.min_tumor_allele_freq, args.max_control_allele_freq, args.max_fisher_pvalue)
-    """
 
-    filt.generate_contig(args.output_file + ".tmp.filt2.txt", args.output_file + ".tmp.filt3.txt", 
-                         args.tumor_bp_file, args.tumor_bam, args.reference_genome)
+    subprocess.call(["rm", args.output_file + ".tmp.filt1.txt"])
+
+
+def contig_main(args):
+
+    contig.generate_contig(args.tumor_bp_filt_file, args.output_file + ".tmp.filt3.txt", 
+                         args.tumor_bp_file, args.tumor_bam, args.reference_genome, args.min_contig_length)
+
+    contig.alignment_contig(args.tumor_bp_filt_file, args.output_file + ".tmp.filt3.txt", args.output_file, args.reference_genome, args.blat_option, 
+                          args.virus_db, args.repeat_db)
 
