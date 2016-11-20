@@ -4,6 +4,7 @@ import sys, os, math, re, subprocess
 import pysam
 import my_seq
 import swalign
+import annot_utils.gene, annot_utils.exon
 
 
 def assemble_seq(readid2seq, junc_seq, tmp_file_path):
@@ -134,7 +135,7 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
             if key not in key2contig: continue
             contig = key2contig[key]
             if len(contig) < min_contig_length: continue
-            if contig[:8] != F[3][:8]: continue
+            # if contig[:8] != F[3][:8]: continue
 
             
             print >> hout, '\t'.join(F) + '\t' + contig
@@ -146,11 +147,13 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
 
 
 
-def psl_check(psl_file, key2seq, align_margin): 
+def psl_check(psl_file, key2seq, align_margin = 10000): 
 
     tempID = ""
     temp_align2score = {}
-    key2info = {}
+    key2align = {}
+    key2best_score = {}
+    key2margin = {}
     with open(psl_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
@@ -159,12 +162,18 @@ def psl_check(psl_file, key2seq, align_margin):
             if tempID != F[9]:
                 if tempID != "":
                     for k, v in sorted(temp_align2score.items(), key=lambda x: x[1], reverse = False):
-                        key2info[tempID].append(k)
-                        if len(key2info[tempID]) >= 10: break
+                        key2align[tempID].append(k)
+                        if len(key2align[tempID]) >= 10: break
+                        if key2best_score[tempID] != float("inf") and key2margin[tempID] == float("inf"): # second key
+                            key2margin[tempID] = temp_align2score[k] - key2best_score[tempID] 
+                        if key2best_score[tempID] == float("inf"): # first key
+                            key2best_score[tempID] = temp_align2score[k]
 
                 tempID = F[9]
                 temp_align2score = {}
-                key2info[tempID] = []
+                key2align[tempID] = []
+                key2best_score[tempID] = float("inf") 
+                key2margin[tempID] = float("inf")
 
             inseq = key2seq[tempID][0:int(F[11])]
             talign = ','.join([F[13], F[15], F[16], F[8], inseq, str(int(F[10]) - int(F[0]))])
@@ -172,10 +181,14 @@ def psl_check(psl_file, key2seq, align_margin):
                 temp_align2score[talign] = int(F[10]) - int(F[0])
 
         for k, v in sorted(temp_align2score.items(), key=lambda x: x[1], reverse = False):
-            key2info[tempID].append(k)
-            if len(key2info[tempID]) >= 10: break
+            key2align[tempID].append(k)
+            if len(key2align[tempID]) >= 10: break
+            if key2best_score[tempID] != float("inf") and key2margin[tempID] == float("inf"): # second key
+                key2margin[tempID] = temp_align2score[k] - key2best_score[tempID]
+            if key2best_score[tempID] == float("inf"): # first key
+                key2best_score[tempID] = temp_align2score[k]
 
-    return key2info
+    return [key2align, key2best_score, key2margin]
 
 
 def alignment_contig(input_file, contig_file, output_file, reference_genome, blat_option, virus_db, repeat_db):
@@ -204,7 +217,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
         print >> sys.stderr, "blat error, error code: " + str(sRet)
         sys.exit()
 
-    key2info_human = psl_check(output_file + ".tmp4.contig.alignment_check.psl", key2seq, 10)
+    key2align_human, key2bscore_human, key2margin_human = psl_check(output_file + ".tmp4.contig.alignment_check.psl", key2seq)
 
     if virus_db != "":
     
@@ -218,9 +231,9 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
             print >> sys.stderr, "blat error, error code: " + str(sRet)
             sys.exit()
    
-        key2info_virus = psl_check(output_file + ".tmp4.contig.alignment_check_virus.psl", key2seq, 20)
+        key2align_virus, key2bscore_virus, key2margin_virus = psl_check(output_file + ".tmp4.contig.alignment_check_virus.psl", key2seq)
     else:
-        key2info_virus = {}
+        key2info_virus, key2bscore_virus, key2margin_virus = {}, {}, {}
 
     if repeat_db != "":
     
@@ -234,24 +247,38 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
             print >> sys.stderr, "blat error, error code: " + str(sRet)
             sys.exit()
 
-        key2info_repeat = psl_check(output_file + ".tmp4.contig.alignment_check_repeat.psl", key2seq, 20)
+        key2align_repeat, key2bscore_repeat, key2margin_repeat = psl_check(output_file + ".tmp4.contig.alignment_check_repeat.psl", key2seq)
     else:
-        key2info_repeat = {}
+        key2info_repeat, key2bscore_repeat, key2margin_repeat = {}, {}, {} 
 
 
     hout = open(output_file, 'w')    
     with open(input_file, 'r') as hin:
         header = hin.readline().rstrip('\n')
-        print >> hout, header + '\t' + '\t'.join(["Contig", "Human_Alignment", "Virus_Alignment", "RepBase_Alignment"]) 
+        print >> hout, header + '\t' + '\t'.join(["Contig", "Junc_Seq_Consistency", "Human_Alignment", "Human_Mismatch", "Human_Margin",
+                                                  "Virus_Alignment", "Virus_Mismatch", "Virus_Margin", "Repeat_Alignment", "Repeat_Mismatch" "Repeat_Margin"])
+
         for line in hin:
             F = line.rstrip('\n').split('\t')
             key = ','.join(F[:4])
 
-            seq = key2seq[key] if key in key2seq else "---"
-            human = ';'.join(key2info_human[key]) if key in key2info_human and len(key2info_human[key]) > 0 else "---"
-            virus = ';'.join(key2info_virus[key]) if key in key2info_virus and len(key2info_virus[key]) > 0 else "---"
-            repeat = ';'.join(key2info_repeat[key]) if key in key2info_repeat and len(key2info_repeat[key]) > 0 else "---"
-            print >> hout, '\t'.join(F) + '\t' + seq + '\t' + human + '\t' + virus + '\t' + repeat
+            seq = key2seq[key] if key in key2seq and len(key2seq[key]) > 0 else "---"
+            junc_seq_consistency = "TRUE" if seq[:8] == F[3][:8] else "FALSE"
+
+            align_human = ';'.join(key2align_human[key]) if key in key2align_human and len(key2align_human[key]) > 0 else "---"
+            bscore_human = str(key2bscore_human[key]) if key in key2bscore_human and key2bscore_human[key] != float("inf") else "---"
+            margin_human = str(key2margin_human[key]) if key in key2margin_human and key2margin_human[key] != float("inf") else "---"
+ 
+            align_virus = ';'.join(key2align_virus[key]) if key in key2align_virus and len(key2align_virus[key]) > 0 else "---"
+            bscore_virus = str(key2bscore_virus[key]) if key in key2bscore_virus and key2bscore_virus[key] != float("inf") else "---"
+            margin_virus = str(key2margin_virus[key]) if key in key2margin_virus and key2margin_virus[key] != float("inf") else "---"
+
+            align_repeat = ';'.join(key2align_repeat[key]) if key in key2align_repeat and len(key2align_repeat[key]) > 0 else "---"
+            bscore_repeat = str(key2bscore_repeat[key]) if key in key2bscore_repeat and key2bscore_repeat[key] != float("inf") else "---"
+            margin_repeat = str(key2margin_repeat[key]) if key in key2margin_repeat and key2margin_repeat[key] != float("inf") else "---"
+
+            print >> hout, '\t'.join(F) + '\t' + seq + '\t' + junc_seq_consistency + '\t' + align_human + '\t' + bscore_human + '\t' + margin_human + '\t' + \
+                           align_virus + '\t' + bscore_virus + '\t' + margin_virus + '\t' + align_repeat + '\t' + bscore_repeat + '\t' + margin_repeat
 
     hout.close()
 
@@ -261,4 +288,72 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
     subprocess.call(["rm", "-rf", output_file + ".tmp4.contig.alignment_check_repeat.psl"])
 
 
-     
+    
+def annotate_break_point(input_file, output_file, genome_id, is_grc):
+
+    annot_utils.gene.make_gene_info(output_file + ".tmp.refGene.bed.gz", "refseq", genome_id, is_grc, False)
+    annot_utils.exon.make_exon_info(output_file + ".tmp.refExon.bed.gz", "refseq", genome_id, is_grc, False)
+
+    gene_tb = pysam.TabixFile(output_file + ".tmp.refGene.bed.gz")
+    exon_tb = pysam.TabixFile(output_file + ".tmp.refExon.bed.gz")
+
+    hout = open(output_file, 'w')
+    header2ind = {}
+    with open(input_file, 'r') as hin:
+        header = hin.readline().rstrip('\n').split('\t')
+        for (i, cname) in enumerate(header):
+            header2ind[cname] = i
+
+        print >> hout, '\t'.join(["Chr", "Pos", "Dir", "Junc_Seq", "Gene", "Exon"] + header[4:])
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+
+            ##########
+            # check gene annotation
+            tabixErrorFlag = 0
+            try:
+                records = gene_tb.fetch(F[header2ind["Chr"]], int(F[header2ind["Pos"]]) - 1, int(F[header2ind["Pos"]]) + 1)
+            except Exception as inst:
+                # print >> sys.stderr, "%s: %s at the following key:" % (type(inst), inst.args)
+                # print >> sys.stderr, '\t'.join(F)
+                tabixErrorFlag = 1
+
+            gene = [];
+            if tabixErrorFlag == 0:
+                for record_line in records:
+                    record = record_line.split('\t')
+                    gene.append(record[3])
+
+            gene = list(set(gene))
+            if len(gene) == 0: gene.append("---")  
+
+            ##########
+            # check gene annotation
+            tabixErrorFlag = 0
+            try:
+                records = exon_tb.fetch(F[header2ind["Chr"]], int(F[header2ind["Pos"]]) - 1, int(F[header2ind["Pos"]]) + 1)
+            except Exception as inst:
+                # print >> sys.stderr, "%s: %s at the following key:" % (type(inst), inst.args)
+                # print >> sys.stderr, '\t'.join(F)
+                tabixErrorFlag = 1
+                
+            exon = [];
+            if tabixErrorFlag == 0:
+                for record_line in records:
+                    record = record_line.split('\t')
+                    exon.append(record[3])
+                    
+            exon = list(set(exon))
+            if len(exon) == 0: exon.append("---")
+
+            print >> hout, '\t'.join([F[header2ind[x]] for x in ["Chr", "Pos", "Dir", "Junc_Seq"]]) + '\t' + \
+                           ','.join(gene) + '\t' + ';'.join(exon) + '\t' + '\t'.join(F[(header2ind["Junc_Seq"] + 1):])
+
+    hout.close()
+
+    subprocess.call(["rm", "-rf", output_file + ".tmp.refGene.bed.gz"])
+    subprocess.call(["rm", "-rf", output_file + ".tmp.refExon.bed.gz"])
+    subprocess.call(["rm", "-rf", output_file + ".tmp.refGene.bed.gz.tbi"])
+    subprocess.call(["rm", "-rf", output_file + ".tmp.refExon.bed.gz.tbi"])
+
+    

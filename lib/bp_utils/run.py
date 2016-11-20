@@ -124,6 +124,8 @@ def contig_main(args):
     contig.generate_contig(args.tumor_bp_filt_file, args.output_file + ".tmp.filt3.txt", 
                          args.tumor_bp_file, args.tumor_bam, args.reference_genome, args.min_contig_length)
 
-    contig.alignment_contig(args.tumor_bp_filt_file, args.output_file + ".tmp.filt3.txt", args.output_file, args.reference_genome, args.blat_option, 
-                          args.virus_db, args.repeat_db)
+    contig.alignment_contig(args.tumor_bp_filt_file, args.output_file + ".tmp.filt3.txt", args.output_file + ".tmp.filt4.txt", 
+                            args.reference_genome, args.blat_option, args.virus_db, args.repeat_db) 
+
+    contig.annotate_break_point(args.output_file + ".tmp.filt4.txt", args.output_file, args.genome_id, args.grc)
 

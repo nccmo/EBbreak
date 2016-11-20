@@ -133,6 +133,12 @@ contig.add_argument("output_file", metavar = "output.txt", type = str,
 contig.add_argument("reference_genome", metavar = "reference.fa", type = str,
                     help = "path to reference genome")
 
+contig.add_argument("--grc", default = False, action = 'store_true',
+                    help = "convert chromosome names to Genome Reference Consortium nomenclature (default: %(default)s)")
+
+contig.add_argument("--genome_id", choices = ["hg19", "hg38", "mm10"], default = "hg19",
+                    help = "the genome id used for selecting UCSC-GRC chromosome name corresponding files (default: %(default)s)")
+
 contig.add_argument("--blat_option", type = str, default = "-stepSize=5 -repMatch=2253",
                     help = "option used in blat")
  
@@ -142,7 +148,7 @@ contig.add_argument("--virus_db", type = str, default = "",
 contig.add_argument("--repeat_db", type = str, default = "",
                     help = "path to repeat sequence database (fasta format)")
 
-contig.add_argument("--min_contig_length", type = int, default = 50,
+contig.add_argument("--min_contig_length", type = int, default = 0,
                   help = "threshould of minimum contig length (if the generated contig size is below this value, then filtered out) (default: %(default)s)")
 
 contig.set_defaults(func = contig_main)
