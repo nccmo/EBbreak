@@ -111,6 +111,11 @@ filt.add_argument("--min_median_mapq", type = int, default = 40,
 filt.add_argument("--min_max_clip_size", type = int, default = 30,
                   help = "threshould of maximum clipped size (if the maximum clipped size is below this value, then filtered out) (default: %(default)s)")
 
+filt.add_argument("--ignore_juncseq_consistency", action='store_true', default=False, 
+                         help = "ignore juncseq consistency when comparing with control")
+
+filt.add_argument("--permissible_range", type = int, default = 0,
+                  help = "permissible range for control breakpoint search")
 
 filt.set_defaults(func = filt_main)
 ####################

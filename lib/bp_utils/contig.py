@@ -47,8 +47,8 @@ def assemble_seq(readid2seq, junc_seq, tmp_file_path):
                     ttcontig = my_seq.reverse_complement(tseq[:aln_2.r_pos])
                     if len(ttcontig) > len(temp_contig): temp_contig = ttcontig
 
-    subprocess.call(["rm", "-rf", tmp_file_path + ".tmp3.assemble_input.fa"])
-    subprocess.call(["rm", "-rf", tmp_file_path + ".tmp3.assemble_output.fq"])
+    # subprocess.call(["rm", "-rf", tmp_file_path + ".tmp3.assemble_input.fa"])
+    # subprocess.call(["rm", "-rf", tmp_file_path + ".tmp3.assemble_output.fq"])
     return temp_contig
 
  
@@ -73,8 +73,8 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
             if tabixErrorFlag == 0:
                 for record_line in records:
                     record = record_line.split('\t')
-                    if record[0] == F[0] and record[1] == F[1] and record[2] == F[2] and record[3] == F[3]:
-                        for readid in record[4].split(';'):
+                    if record[0] == F[0] and (int(record[1])+1) == int(F[1]) and record[3] == F[2] and record[4] == F[3]:
+                        for readid in record[5].split(';'):
                             readid2key[re.sub(r'/\d$', '', readid)] = ','.join(F[:4])
 
  
@@ -142,8 +142,8 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
 
     hout.close()
 
-    subprocess.call(["rm", "-rf", output_file + ".tmp2.contig.sorted"])
-    subprocess.call(["rm", "-rf", output_file + ".tmp2.contig.unsorted"])
+    # subprocess.call(["rm", "-rf", output_file + ".tmp2.contig.sorted"])
+    # subprocess.call(["rm", "-rf", output_file + ".tmp2.contig.unsorted"])
 
 
 
@@ -282,10 +282,10 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
 
     hout.close()
 
-    subprocess.call(["rm", "-rf", output_file + ".tmp4.contig.alignment_check.fa"])
-    subprocess.call(["rm", "-rf", output_file + ".tmp4.contig.alignment_check.psl"])
-    subprocess.call(["rm", "-rf", output_file + ".tmp4.contig.alignment_check_virus.psl"])
-    subprocess.call(["rm", "-rf", output_file + ".tmp4.contig.alignment_check_repeat.psl"])
+    # subprocess.call(["rm", "-rf", output_file + ".tmp4.contig.alignment_check.fa"])
+    # subprocess.call(["rm", "-rf", output_file + ".tmp4.contig.alignment_check.psl"])
+    # subprocess.call(["rm", "-rf", output_file + ".tmp4.contig.alignment_check_virus.psl"])
+    # subprocess.call(["rm", "-rf", output_file + ".tmp4.contig.alignment_check_repeat.psl"])
 
 
     
@@ -356,4 +356,72 @@ def annotate_break_point(input_file, output_file, genome_id, is_grc):
     subprocess.call(["rm", "-rf", output_file + ".tmp.refGene.bed.gz.tbi"])
     subprocess.call(["rm", "-rf", output_file + ".tmp.refExon.bed.gz.tbi"])
 
-    
+'''    
+def getPairCoverRegionFromBam(inputBam, outputFilePath, inputTabixFile):
+
+    """
+    script for obtaining pair read information (mainly end position, because it cannot recovered from bam files)
+    """
+    ####################
+    bamfile = pysam.Samfile(inputBam, "rb")
+    tabixfile = pysam.TabixFile(inputTabixFile)
+    hOUT = open(outputFilePath + ".tmp", "w")
+
+    ID2info = {}
+    tempChr = ""
+    tempPos = 0
+    checkPositionMargin = 10000000
+
+    tabixErrorMsg = ""
+    for read in bamfile.fetch():
+
+    # when into new regions, fetch the keys from the tabix indexed file
+    if bamfile.getrname(read.tid) != tempChr or int(read.pos + 1) > tempPos + checkPositionMargin:
+
+        tempChr = bamfile.getrname(read.tid)
+        tempPos = int(read.pos + 1) - 1
+
+        ID2info = {}
+        tabixErrorFlag = 0
+        try:
+            records = tabixfile.fetch(tempChr, tempPos, tempPos + checkPositionMargin)
+            Exception as inst:
+            # print >> sys.stderr, "%s: %s" % (type(inst), inst.args)
+            tabixErrorMsg = str(inst.args) 
+            tabixErrorFlag = 1
+
+            if tabixErrorFlag == 0:
+                for record in records:
+                    splt_record = record.split('\t')
+                    ID2info[splt_record[3]] = record
+
+                flags = format(int(read.flag), '#014b')[:1:-1]
+
+                # skip supplementary alignment
+                if flags[8] == "1" or flags[11] == "1": continue
+
+                # skip one of the pair is unmapped
+                if flags[2] == "1" or flags[3] == "1": continue
+                                         
+                seqID = (read.qname + "/1" if  flags[6] == "1" else read.qname + "/2")
+
+                if seqID in ID2info:
+                     print >> hOUT, ID2info[seqID] + "\t" + bamfile.getrname(read.tid) + ":" + str(read.pos + 1) + "-" + str(read.aend) + "\t" + str(read.mapq)
+
+            if tabixErrorMsg != "":
+                utils.warningMessage("One or more error occured in tabix file fetch, e.g.: " + tabixErrorMsg)
+
+            bamfile.close()
+            tabixfile.close()
+            ####################
+
+            ####################
+            hOUT = open(outputFilePath, 'w')
+            subprocess.call(["sort", "-k5n", outputFilePath + ".tmp"], stdout = hOUT)
+            hOUT.close()
+            ####################
+
+            ####################
+            subprocess.call(["rm", outputFilePath + ".tmp"])
+
+'''    

@@ -59,7 +59,7 @@ def parse_bp_from_bam(input_bam, output_file, key_seq_size, min_major_clip_size,
             juncseq_end = readLength_current - clipLen_current + key_seq_size 
             juncseq = read.seq[juncseq_start:juncseq_end]
 
-            print >> hout, '\t'.join([juncChr_current, str(juncPos_current), juncDir_current, juncseq, 
+            print >> hout, '\t'.join([juncChr_current, str(juncPos_current-1), str(juncPos_current), juncDir_current, juncseq, 
                                       read.qname + ("/1" if flags[6] == "1" else "/2"), str(read.mapq), str(right_clipping), str(alignmentSize_current)])
 
         if left_clipping >= min_major_clip_size:
@@ -76,7 +76,7 @@ def parse_bp_from_bam(input_bam, output_file, key_seq_size, min_major_clip_size,
             juncseq_start = clipLen_current - key_seq_size 
             juncseq = my_seq.reverse_complement(read.seq[juncseq_start:juncseq_end])
 
-            print >> hout, '\t'.join([juncChr_current, str(juncPos_current), juncDir_current, juncseq, 
+            print >> hout, '\t'.join([juncChr_current, str(juncPos_current-1), str(juncPos_current), juncDir_current, juncseq, 
                                       read.qname + ("/1" if flags[6] == "1" else "/2"), str(read.mapq), str(left_clipping), str(alignmentSize_current)])
 
 
@@ -117,16 +117,16 @@ def cluster_breakpoint(input_file, output_file, check_interval):
                 tmp_pos = int(F[1])
 
              
-            key = F[0] + '\t' + F[1] + '\t' + F[2] + '\t' + F[3]
+            key = F[0] + '\t' + F[1] + '\t' + F[2] + '\t' + F[3] + '\t' + F[4]
             if key not in key2read: key2read[key] = []
             if key not in key2mapq: key2mapq[key] = []
             if key not in key2clipsize: key2clipsize[key] = []
             if key not in key2alnsize: key2alnsize[key] = []
 
-            key2read[key].append(F[4])
-            key2mapq[key].append(F[5])
-            key2clipsize[key].append(F[6])
-            key2alnsize[key].append(F[7])
+            key2read[key].append(F[5])
+            key2mapq[key].append(F[6])
+            key2clipsize[key].append(F[7])
+            key2alnsize[key].append(F[8])
 
     # final flush
     for key in key2read:
