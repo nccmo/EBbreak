@@ -103,17 +103,19 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
 
     hout = open(output_file + ".tmp2.contig2.unsorted", 'w')
     for read in bamfile.fetch():
-       
-        if read.qname in readid2key2:
-            flags = format(int(read.flag), "#014b")[:1:-1]
 
+       flags = format(int(read.flag), "#014b")[:1:-1]
+
+       ID = read.qname + ("/1" if flags[6] == "1" else "/2")
+
+        if ID in readid2key2:
             # skip supplementary alignment
             if flags[8] == "1" or flags[11] == "1": continue
 
             # skip duplicated reads
             if flags[10] == "1": continue
 
-            print >> hout, readid2key[read.qname] + '\t' + read.qname + ("/1" if flags[6] == "1" else "/2") + '\t' + read.query_sequence
+            print >> hout, readid2key2[ID] + '\t' + ID + '\t' + read.query_sequence
 
     hout.close()
 
