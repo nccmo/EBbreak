@@ -56,7 +56,10 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
 
     tumor_bp_db = pysam.TabixFile(tumor_bp_file)
 
+    #readid2key gets paired-reads if either of the pair contains breakpoint
     readid2key = {}
+    #readidkey2 gets reads if the read contains breakpoint (pair read is not included)
+    readid2key2 = {}
     with open(input_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')               
@@ -76,6 +79,7 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
                     if record[0] == F[0] and (int(record[1])+1) == int(F[1]) and record[3] == F[2] and record[4] == F[3]:
                         for readid in record[5].split(';'):
                             readid2key[re.sub(r'/\d$', '', readid)] = ','.join(F[:4])
+                            readid2key2[readid] =  ','.join(F[:4])
 
  
     bamfile = pysam.Samfile(tumor_bam, "rb")
@@ -96,8 +100,30 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
 
     hout.close()
 
+
+    hout = open(output_file + ".tmp2.contig2.unsorted", 'w')
+    for read in bamfile.fetch():
+       
+        if read.qname in readid2key2:
+            flags = format(int(read.flag), "#014b")[:1:-1]
+
+            # skip supplementary alignment
+            if flags[8] == "1" or flags[11] == "1": continue
+
+            # skip duplicated reads
+            if flags[10] == "1": continue
+
+            print >> hout, readid2key[read.qname] + '\t' + read.qname + ("/1" if flags[6] == "1" else "/2") + '\t' + read.query_sequence
+
+    hout.close()
+
+
     hout = open(output_file + ".tmp2.contig.sorted", 'w')
     subprocess.call(["sort", "-k1,1", output_file + ".tmp2.contig.unsorted"], stdout = hout)
+    hout.close()
+
+    hout = open(output_file + ".tmp2.contig2.sorted", 'w')
+    subprocess.call(["sort", "-k1,1", output_file + ".tmp2.contig2.unsorted"], stdout = hout)
     hout.close()
 
 
