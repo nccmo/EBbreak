@@ -98,7 +98,8 @@ def filter_by_allele_freq(input_file, output_file, tumor_bam, matched_control_ba
             region = F[0] + ':' + F[1] + '-' + F[1]
 
             depth_tumor_info = pysam.depth(tumor_bam, "-r", region)
-            depth_tumor = int(depth_tumor_info[0].rstrip('\n').split('\t')[2])
+            #depth_tumor = int(depth_tumor_info[0].rstrip('\n').split('\t')[2])
+            depth_tumor = int(depth_tumor_info.rstrip('\n').split('\t')[2])
             # depth_tumor = int(depth_tumor_info.split('\t')[2])
             # depth_tumor = int(depth_tumor_info[0].split('\t')[2])
             AF_tumor = float(tumor_num) / depth_tumor
@@ -107,7 +108,8 @@ def filter_by_allele_freq(input_file, output_file, tumor_bam, matched_control_ba
             # print '\t'.join(F)
             if matched_control_bam != "":
                 depth_control_info = pysam.depth(matched_control_bam, "-r", region)
-                depth_control = int(depth_control_info[0].rstrip('\n').split('\t')[2]) if len(depth_control_info) != 0 else 0
+                #depth_control = int(depth_control_info[0].rstrip('\n').split('\t')[2]) if len(depth_control_info) != 0 else 0
+                depth_control = int(depth_control_info.rstrip('\n').split('\t')[2]) if len(depth_control_info) != 0 else 0
                 # depth_control = int(depth_control_info.split('\t')[2]) if len(depth_control_info) != 0 else 0
                 # depth_control = int(depth_control_info[0].split('\t')[2]) if len(depth_control_info) != 0 else 0
                 control_AF = float(control_num) / depth_control if depth_control > 0 else 1.0

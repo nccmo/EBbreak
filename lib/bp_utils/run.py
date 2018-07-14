@@ -42,7 +42,7 @@ def merge_control_main(args):
     if os.path.dirname(args.output_file) != "" and not os.path.exists(os.path.dirname(args.output_file)):
         os.makedirs(os.path.dirname(args.output_file))
 
-    hout = open(args.output_file + ".unsorted", 'w')
+    hout = open(args.output_file + ".unsorted.txt", 'w')
     with open(args.bp_file_list, 'r') as hin:
         for line in hin:
             bp_file = line.rstrip('\n')
@@ -55,8 +55,8 @@ def merge_control_main(args):
                     print >> hout, F[0] + '\t' + F[1] + '\t' + F[2] + '\t' + F[3] + '\t' + F[4] + '\t' + str(support_num)
                 
 
-    hout = open(args.output_file + ".sorted", 'w')
-    s_ret = subprocess.call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k4,4", "-k5,5", args.output_file + ".unsorted"], stdout = hout)
+    hout = open(args.output_file + ".sorted.txt", 'w')
+    s_ret = subprocess.call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k4,4", "-k5,5", args.output_file + ".unsorted.txt"], stdout = hout)
     hout.close()
 
     if s_ret != 0:
@@ -64,8 +64,8 @@ def merge_control_main(args):
         sys.exit(1)
 
 
-    hout = open(args.output_file + ".merged", 'w')
-    with open(args.output_file + ".sorted", 'r') as hin:
+    hout = open(args.output_file + ".merged.txt", 'w')
+    with open(args.output_file + ".sorted.txt", 'r') as hin:
         temp_key = ""
         temp_read_num = []
         for line in hin:
@@ -88,7 +88,7 @@ def merge_control_main(args):
 
 
     hout = open(args.output_file, 'w')
-    s_ret = subprocess.call(["bgzip", "-f", "-c", args.output_file + ".merged"], stdout = hout)
+    s_ret = subprocess.call(["bgzip", "-f", "-c", args.output_file + ".merged.txt"], stdout = hout)
     hout.close()
 
     if s_ret != 0:
@@ -101,9 +101,9 @@ def merge_control_main(args):
         print >> sys.stderr, "Error in indexing merged junction file"
         sys.exit(1)
 
-    subprocess.call(["rm", "-f", args.output_file + ".unsorted"])
-    subprocess.call(["rm", "-f", args.output_file + ".sorted"])
-    subprocess.call(["rm", "-f", args.output_file + ".merged"])
+    #subprocess.call(["rm", "-f", args.output_file + ".unsorted"])
+    #subprocess.call(["rm", "-f", args.output_file + ".sorted"])
+    #subprocess.call(["rm", "-f", args.output_file + ".merged"])
 
 
 def filt_main(args):
