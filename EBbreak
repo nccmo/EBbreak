@@ -1,13 +1,13 @@
 #! /usr/bin/env python
 
-from bp_utils.run import *
+from EBbreak.run import *
 import argparse
 
 ####################
 # top level parser
-parser = argparse.ArgumentParser(prog = "bp_utils", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser = argparse.ArgumentParser(prog = "EBbreak", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-parser.add_argument("--version", action = "version", version = "bp_utils-0.1.0")
+parser.add_argument("--version", action = "version", version = "EBbreak-0.1.0")
 
 subparsers = parser.add_subparsers()
 

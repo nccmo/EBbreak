@@ -21,35 +21,41 @@ def assemble_seq(readid2seq, junc_seq, tmp_file_path):
         print >> hout, readid2seq[tid]
     hout.close()
     
-    hout = open(tmp_file_path + ".tmp3.assemble_output.fq", 'w')
-    sret = subprocess.call(["fml-asm", tmp_file_path + ".tmp3.assemble_input.fa"], stdout = hout) 
-    hout.close()
+    cap3output = tmp_file_path + ".tmp3.assemble_input.fa.cap3.screen"
+    cap3input = tmp_file_path + ".tmp3.assemble_input.fa"
+    sret = subprocess.Popen("cap3 %s -i 25 -j 31 -o 16 -s 251 -z 1 -c 10 > %s" % (cap3input,cap3output), shell=True).wait()
 
     if sret != 0:
-        print >> sys.stderr, "fml-asm error, error code: " + str(sret)
-        sys.exit()
+        print >> sys.stderr, "cap3 error, error code: " + str(sret)
+        #sys.exit()
  
     line_num = 0
     temp_contig = ""
-    with open(tmp_file_path + ".tmp3.assemble_output.fq", 'r') as hin:
-        for line in hin:
-            line_num = line_num + 1
-            if line_num % 4 == 2:
-                tseq = line.rstrip('\n')
+    with open(tmp_file_path + ".tmp3.assemble_input.fa.cap.contigs", 'r') as hin:
+        Allhin = hin.read()
+        hin2 = Allhin.replace('\n', '').split(">")
+        tseq = []
+        for i in hin2:
+            if i != "":
+                seq =  re.sub(r'\d+','',i[6:])
+                tseq.append(seq)
 
-                aln_1 = sw.align(tseq, junc_seq)
-                if aln_1.score >= 35:
-                    ttcontig = tseq[aln_1.r_end:]
-                    if len(ttcontig) > len(temp_contig): temp_contig = ttcontig
-                
-                aln_2 = sw.align(tseq, my_seq.reverse_complement(junc_seq))
-                if aln_2.score >= 35:
-                    ttcontig = my_seq.reverse_complement(tseq[:aln_2.r_pos])
-                    if len(ttcontig) > len(temp_contig): temp_contig = ttcontig
+        if len(tseq) == 1:
+            ttseq = tseq[0]
+            aln_1 = sw.align(ttseq, junc_seq)
+            if aln_1.score >= 35:
+                ttcontig = ttseq[aln_1.r_end:]
+                if len(ttcontig) > len(temp_contig): temp_contig = ttcontig
 
-    # subprocess.call(["rm", "-rf", tmp_file_path + ".tmp3.assemble_input.fa"])
-    # subprocess.call(["rm", "-rf", tmp_file_path + ".tmp3.assemble_output.fq"])
-    return temp_contig
+            aln_2 = sw.align(ttseq, my_seq.reverse_complement(junc_seq))
+            if aln_2.score >= 35:
+                ttcontig = my_seq.reverse_complement(ttseq[:aln_2.r_pos])
+                if len(ttcontig) > len(temp_contig): temp_contig = ttcontig
+
+            return temp_contig
+
+        else:
+            return ""
 
  
 def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference_genome, min_contig_length):
@@ -104,9 +110,9 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
     hout = open(output_file + ".tmp2.contig2.unsorted", 'w')
     for read in bamfile.fetch():
 
-       flags = format(int(read.flag), "#014b")[:1:-1]
+        flags = format(int(read.flag), "#014b")[:1:-1]
 
-       ID = read.qname + ("/1" if flags[6] == "1" else "/2")
+        ID = read.qname + ("/1" if flags[6] == "1" else "/2")
 
         if ID in readid2key2:
             # skip supplementary alignment
@@ -153,6 +159,30 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
         if len(temp_id2seq) > 0: 
             key2contig[temp_key] = assemble_seq(temp_id2seq, temp_junc_seq, output_file)
 
+    temp_key2 = ""
+    temp_id2seq2 = {}
+    temp_junc_seq2 = ""
+    key2contig2 = {}
+    with open(output_file + ".tmp2.contig2.sorted") as hin2:
+        for line in hin2:
+            F = line.rstrip('\n').split('\t')
+            if temp_key2 != F[0]:
+                if len(temp_id2seq2) > 0:
+                    key2contig2[temp_key2] = assemble_seq(temp_id2seq2, temp_junc_seq2, output_file)
+
+                temp_key2 = F[0]
+                temp_id2seq2 = {}
+                FF = temp_key2.split(',')
+                if FF[2] == "+":
+                    temp_junc_seq2 = my_seq.get_seq(reference_genome, FF[0], int(FF[1]) - 20, int(FF[1]))
+                else:
+                    temp_junc_seq2 = my_seq.reverse_complement(my_seq.get_seq(reference_genome, FF[0], int(FF[1]), int(FF[1]) + 20))
+
+            temp_id2seq2[F[1]] = F[2]
+
+        if len(temp_id2seq2) > 0: 
+            key2contig2[temp_key2] = assemble_seq(temp_id2seq2, temp_junc_seq2, output_file)
+
 
     hout = open(output_file, 'w')
     with open(input_file, 'r') as hin:
@@ -162,11 +192,17 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
 
             if key not in key2contig: continue
             contig = key2contig[key]
+            if key not in key2contig2: continue
+            contig2 = key2contig2[key]
+            if len(contig2) > len(contig):
+                long_contig = contig2
+            else:
+                long_contig = contig
             if len(contig) < min_contig_length: continue
             # if contig[:8] != F[3][:8]: continue
 
             
-            print >> hout, '\t'.join(F) + '\t' + contig
+            print >> hout, '\t'.join(F) + '\t' + long_contig + '\t' + contig + '\t' + contig2
 
     hout.close()
 
@@ -284,7 +320,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
     with open(input_file, 'r') as hin:
         header = hin.readline().rstrip('\n')
         print >> hout, header + '\t' + '\t'.join(["Contig", "Junc_Seq_Consistency", "Human_Alignment", "Human_Mismatch", "Human_Margin",
-                                                  "Virus_Alignment", "Virus_Mismatch", "Virus_Margin", "Repeat_Alignment", "Repeat_Mismatch" "Repeat_Margin"])
+                                                  "Virus_Alignment", "Virus_Mismatch", "Virus_Margin", "Repeat_Alignment", "Repeat_Mismatch", "Repeat_Margin"])
 
         for line in hin:
             F = line.rstrip('\n').split('\t')
