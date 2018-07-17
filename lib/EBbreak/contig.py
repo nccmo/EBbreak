@@ -363,7 +363,7 @@ def psl_check(psl_file, key2seq, align_margin = 10000):
     return [key2align, key2best_score, key2margin]
 
 
-def alignment_contig(input_file, contig_file, output_file, reference_genome, blat_option, virus_db, repeat_db):
+def alignment_contig(input_file, contig_file, output_file, reference_genome, blat_option, virus_db, repeat_db, mitochondria_db, bacteria_db):
     
     blat_cmds = ("blat " + blat_option).split(' ')
 
@@ -457,7 +457,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
    
         key2align_virus, key2bscore_virus, key2margin_virus = psl_check(output_file + ".tmp4.contig.alignment_check_virus.psl", key2seq)
     else:
-        key2info_virus, key2bscore_virus, key2margin_virus = {}, {}, {}
+        key2align_virus, key2bscore_virus, key2margin_virus = {}, {}, {}
 
     if virus_db != "":
         FNULL = open(os.devnull, 'w')
@@ -472,7 +472,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
    
         key2align_virus2, key2bscore_virus2, key2margin_virus2 = psl_check(output_file + ".tmp4.contig.alignment_check_virus2.psl", key2seq)
     else:
-        key2info_virus2, key2bscore_virus2, key2margin_virus2 = {}, {}, {}
+        key2align_virus2, key2bscore_virus2, key2margin_virus2 = {}, {}, {}
 
     if virus_db != "":
         FNULL = open(os.devnull, 'w')
@@ -487,7 +487,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
    
         key2align_virus3, key2bscore_virus3, key2margin_virus3 = psl_check(output_file + ".tmp4.contig.alignment_check_virus2.psl", key2seq)
     else:
-        key2info_virus3, key2bscore_virus3, key2margin_virus3 = {}, {}, {}
+        key2align_virus3, key2bscore_virus3, key2margin_virus3 = {}, {}, {}
     ################################################
 
 
@@ -505,7 +505,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
 
         key2align_repeat, key2bscore_repeat, key2margin_repeat = psl_check(output_file + ".tmp4.contig.alignment_check_repeat.psl", key2seq)
     else:
-        key2info_repeat, key2bscore_repeat, key2margin_repeat = {}, {}, {} 
+        key2align_repeat, key2bscore_repeat, key2margin_repeat = {}, {}, {} 
 
     if repeat_db != "":
         FNULL = open(os.devnull, 'w')
@@ -520,7 +520,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
 
         key2align_repeat2, key2bscore_repeat2, key2margin_repeat2 = psl_check(output_file + ".tmp4.contig.alignment_check_repeat2.psl", key2seq)
     else:
-        key2info_repeat2, key2bscore_repeat2, key2margin_repeat2 = {}, {}, {} 
+        key2align_repeat2, key2bscore_repeat2, key2margin_repeat2 = {}, {}, {} 
 
     if repeat_db != "":
         FNULL = open(os.devnull, 'w')
@@ -535,7 +535,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
 
         key2align_repeat3, key2bscore_repeat3, key2margin_repeat3 = psl_check(output_file + ".tmp4.contig.alignment_check_repeat3.psl", key2seq)
     else:
-        key2info_repeat3, key2bscore_repeat3, key2margin_repeat3 = {}, {}, {} 
+        key2align_repeat3, key2bscore_repeat3, key2margin_repeat3 = {}, {}, {} 
     ################################################
 
     # mitochondria_genome #################################
@@ -552,7 +552,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
 
         key2align_mitochondria, key2bscore_mitochondria, key2margin_mitochondria = psl_check(output_file + ".tmp4.contig.alignment_check_mitochondria.psl", key2seq)
     else:
-        key2info_mitochondria, key2bscore_mitochondria, key2margin_mitochondria = {}, {}, {} 
+        key2align_mitochondria, key2bscore_mitochondria, key2margin_mitochondria = {}, {}, {} 
 
     if mitochondria_db != "":
         FNULL = open(os.devnull, 'w')
@@ -567,7 +567,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
 
         key2align_mitochondria2, key2bscore_mitochondria2, key2margin_mitochondria2 = psl_check(output_file + ".tmp4.contig.alignment_check_mitochondria2.psl", key2seq)
     else:
-        key2info_mitochondria2, key2bscore_mitochondria2, key2margin_mitochondria2 = {}, {}, {} 
+        key2align_mitochondria2, key2bscore_mitochondria2, key2margin_mitochondria2 = {}, {}, {} 
 
     if mitochondria_db != "":
         FNULL = open(os.devnull, 'w')
@@ -582,7 +582,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
 
         key2align_mitochondria3, key2bscore_mitochondria3, key2margin_mitochondria3 = psl_check(output_file + ".tmp4.contig.alignment_check_mitochondria3.psl", key2seq)
     else:
-        key2info_mitochondria3, key2bscore_mitochondria3, key2margin_mitochondria3 = {}, {}, {} 
+        key2align_mitochondria3, key2bscore_mitochondria3, key2margin_mitochondria3 = {}, {}, {} 
     ################################################
 
 
@@ -601,7 +601,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
 
         key2align_bacteria, key2bscore_bacteria, key2margin_bacteria = psl_check(output_file + ".tmp4.contig.alignment_check_bacteria.psl", key2seq)
     else:
-        key2info_bacteria, key2bscore_bacteria, key2margin_bacteria = {}, {}, {} 
+        key2align_bacteria, key2bscore_bacteria, key2margin_bacteria = {}, {}, {} 
 
     if bacteria_db != "":
         FNULL = open(os.devnull, 'w')
@@ -616,7 +616,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
 
         key2align_bacteria2, key2bscore_bacteria2, key2margin_bacteria2 = psl_check(output_file + ".tmp4.contig.alignment_check_bacteria2.psl", key2seq)
     else:
-        key2info_bacteria2, key2bscore_bacteria2, key2margin_bacteria2 = {}, {}, {} 
+        key2align_bacteria2, key2bscore_bacteria2, key2margin_bacteria2 = {}, {}, {} 
 
     if bacteria_db != "":
         FNULL = open(os.devnull, 'w')
@@ -631,7 +631,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
 
         key2align_bacteria3, key2bscore_bacteria3, key2margin_bacteria3 = psl_check(output_file + ".tmp4.contig.alignment_check_bacteria3.psl", key2seq)
     else:
-        key2info_bacteria3, key2bscore_bacteria3, key2margin_bacteria3 = {}, {}, {} 
+        key2align_bacteria3, key2bscore_bacteria3, key2margin_bacteria3 = {}, {}, {} 
     ################################################
 
 
