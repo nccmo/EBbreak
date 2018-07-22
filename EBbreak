@@ -156,7 +156,7 @@ contig.add_argument("--repeat_db", type = str, default = "",
 contig.add_argument("--mitochondria_db", type = str, default = "",
                     help = "path to mitochondria sequence database (fasta format)")
 
-contig.add_argument("--bacteria_db", type = str, default = "",
+contig.add_argument("--adapter_db", type = str, default = "",
                     help = "path to bacteria sequence database (fasta format)")
 
 contig.add_argument("--min_contig_length", type = int, default = 0,

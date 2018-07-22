@@ -31,9 +31,9 @@ def parse_main(args):
         print >> sys.stderr, "Error in indexing merged junction file"
         sys.exit(1)
 
-    # subprocess.call(["rm", "-f", args.output_file + ".bp.tmp.txt"])
-    # subprocess.call(["rm", "-f", args.output_file + ".bp.clustered.tmp.txt"])
-    # subprocess.call(["rm", "-f", args.output_file + ".bp.clustered.sorted.tmp.txt"])
+    subprocess.call(["rm", "-f", args.output_file + ".bp.tmp.txt"])
+    subprocess.call(["rm", "-f", args.output_file + ".bp.clustered.tmp.txt"])
+    subprocess.call(["rm", "-f", args.output_file + ".bp.clustered.sorted.tmp.txt"])
    
 
 def merge_control_main(args):
@@ -101,9 +101,9 @@ def merge_control_main(args):
         print >> sys.stderr, "Error in indexing merged junction file"
         sys.exit(1)
 
-    #subprocess.call(["rm", "-f", args.output_file + ".unsorted"])
-    #subprocess.call(["rm", "-f", args.output_file + ".sorted"])
-    #subprocess.call(["rm", "-f", args.output_file + ".merged"])
+    subprocess.call(["rm", "-f", args.output_file + ".unsorted.txt"])
+    subprocess.call(["rm", "-f", args.output_file + ".sorted.txt"])
+    subprocess.call(["rm", "-f", args.output_file + ".merged.txt"])
 
 
 def filt_main(args):
@@ -124,8 +124,11 @@ def contig_main(args):
     contig.generate_contig(args.tumor_bp_filt_file, args.output_file + ".tmp.filt3.txt", 
                            args.tumor_bp_file, args.tumor_bam, args.reference_genome, args.min_contig_length)
 
-    # contig.alignment_contig(args.tumor_bp_filt_file, args.output_file + ".tmp.filt3.txt", args.output_file + ".tmp.filt4.txt", 
-    #                         args.reference_genome, args.blat_option, args.virus_db, args.repeat_db, args.mitochondria_db, args.bacteria_db)
+    contig.alignment_contig(args.tumor_bp_filt_file, args.output_file + ".tmp.filt3.txt", args.output_file + ".tmp.filt4.txt", 
+                            args.reference_genome, args.blat_option, args.virus_db, args.repeat_db, args.mitochondria_db, args.adapter_db)
     
-    # contig.annotate_break_point(args.output_file + ".tmp.filt4.txt", args.output_file, args.genome_id, args.grc)
+    contig.annotate_break_point(args.output_file + ".tmp.filt4.txt", args.output_file, args.genome_id, args.grc)
 
+    subprocess.call(["rm", "-f", args.output_file + ".tmp.filt3.txt"])
+    subprocess.call(["rm", "-f", args.output_file + ".tmp.filt4.txt"])
+    
