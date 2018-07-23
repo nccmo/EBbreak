@@ -287,7 +287,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
 
     FNULL.close()
     if sret != 0:
-        print >> sys.stderr, "blat error, error code: " + str(sRet)
+        print >> sys.stderr, "blat error, error code: " + str(sret)
         sys.exit()
 
     key2align_human, key2bscore_human, key2margin_human = psl_check(output_file + ".tmp4.contig.alignment_check.psl", key2seq)
@@ -303,7 +303,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
     
         FNULL.close()
         if sret != 0:
-            print >> sys.stderr, "blat error, error code: " + str(sRet)
+            print >> sys.stderr, "blat error, error code: " + str(sret)
             sys.exit()
    
         key2align_virus, key2bscore_virus, key2margin_virus = psl_check(output_file + ".tmp4.contig.alignment_check_virus.psl", key2seq)
@@ -321,7 +321,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
 
         FNULL.close()
         if sret != 0:
-            print >> sys.stderr, "blat error, error code: " + str(sRet)
+            print >> sys.stderr, "blat error, error code: " + str(sret)
             sys.exit()
 
         key2align_repeat, key2bscore_repeat, key2margin_repeat = psl_check(output_file + ".tmp4.contig.alignment_check_repeat.psl", key2seq)
@@ -338,7 +338,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
 
         FNULL.close()
         if sret != 0:
-            print >> sys.stderr, "blat error, error code: " + str(sRet)
+            print >> sys.stderr, "blat error, error code: " + str(sret)
             sys.exit()
 
         key2align_mitochondria, key2bscore_mitochondria, key2margin_mitochondria = psl_check(output_file + ".tmp4.contig.alignment_check_mitochondria.psl", key2seq)
@@ -357,7 +357,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
 
         FNULL.close()
         if sret != 0:
-            print >> sys.stderr, "blat error, error code: " + str(sRet)
+            print >> sys.stderr, "blat error, error code: " + str(sret)
             sys.exit()
 
         key2align_adapter, key2bscore_adapter, key2margin_adapter = psl_check(output_file + ".tmp4.contig.alignment_check_adapter.psl", key2seq)
