@@ -43,8 +43,8 @@ def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path):
         tseq = seq.split('\t')
         tseq = filter(lambda str:str != '', tseq)
 
-        if len(tseq) == 1:
-            ttseq = tseq[0]
+        for i in range(0, len(tseq)):
+            ttseq = tseq[i]
             aln_1 = sw.align(ttseq, junc_seq)
             if aln_1.score >= 35:
                 ttcontig = ttseq[aln_1.r_end:]
@@ -55,10 +55,9 @@ def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path):
                 ttcontig = my_seq.reverse_complement(ttseq[:aln_2.r_pos])
                 if len(ttcontig) > len(temp_contig): temp_contig = ttcontig
 
-            return temp_contig
+        return temp_contig
 
-        else:
-            return ""
+    hin.close()
 
 
 def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference_genome, min_contig_length):
