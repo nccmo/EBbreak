@@ -11,9 +11,10 @@ def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path):
 
     match = 2
     mismatch = -1
+    gap_penalty = -2
     scoring = swalign.NucleotideScoringMatrix(match, mismatch)
 
-    sw = swalign.LocalAlignment(scoring)  # you can also choose gap penalties, etc...
+    sw = swalign.LocalAlignment(scoring, gap_penalty)  # you can also choose gap penalties, etc...
 
     hout = open(tmp_file_path + ".tmp3.assemble_input.fa", 'w')
     for tid in sorted(readid2seq):
@@ -55,7 +56,7 @@ def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path):
         for i in range(0, len(tseq)):
             ttseq = tseq[i]
             aln_1 = sw.align(ttseq, junc_seq)
-            if aln_1.score >= 35:
+            if aln_1.score >= 55:
                 ttcontig = ttseq[aln_1.r_end:]
                 gttcontig = ttseq[:aln_1.r_end]
                 if len(ttcontig) > len(temp_contig): 
@@ -63,7 +64,7 @@ def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path):
                     temp_all_contig = str(ttseq)
                     temp_genome_contig = gttcontig
             aln_2 = sw.align(ttseq, my_seq.reverse_complement(junc_seq))
-            if aln_2.score >= 35:
+            if aln_2.score >= 55:
                 ttcontig = my_seq.reverse_complement(ttseq[:aln_2.r_pos])
                 gttcontig = my_seq.reverse_complement(ttseq[aln_2.r_pos:])
                 if len(ttcontig) > len(temp_contig): 
@@ -82,9 +83,10 @@ def assemble_seq_sga(readid2seq, junc_seq, tmp_file_path):
 
     match = 2
     mismatch = -1
+    gap_penalty = -2
     scoring = swalign.NucleotideScoringMatrix(match, mismatch)
 
-    sw = swalign.LocalAlignment(scoring)  # you can also choose gap penalties, etc...
+    sw = swalign.LocalAlignment(scoring, gap_penalty)  # you can also choose gap penalties, etc...
 
     hout = open(tmp_file_path + ".tmp3.assemble_input.fa", 'w')
     for tid in sorted(readid2seq):
@@ -125,7 +127,7 @@ def assemble_seq_sga(readid2seq, junc_seq, tmp_file_path):
             for i in range(0, len(tseq)):
                 ttseq = tseq[i]
                 aln_1 = sw.align(ttseq, junc_seq)
-                if aln_1.score >= 35:
+                if aln_1.score >= 55:
                     ttcontig = ttseq[aln_1.r_end:]
                     gttcontig = ttseq[:aln_1.r_end]
                     if len(ttcontig) > len(temp_contig): 
@@ -134,7 +136,7 @@ def assemble_seq_sga(readid2seq, junc_seq, tmp_file_path):
                         temp_genome_contig = gttcontig
 
                 aln_2 = sw.align(ttseq, my_seq.reverse_complement(junc_seq))
-                if aln_2.score >= 35:
+                if aln_2.score >= 55:
                     ttcontig = my_seq.reverse_complement(ttseq[:aln_2.r_pos])
                     gttcontig = my_seq.reverse_complement(ttseq[aln_2.r_pos:])
                     if len(ttcontig) > len(temp_contig): 
@@ -275,9 +277,9 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
                 temp_id2seq = {}
                 FF = temp_key.split(',')
                 if FF[2] == "+":
-                    temp_junc_seq = my_seq.get_seq(reference_genome, FF[0], int(FF[1]) - 20, int(FF[1]))
+                    temp_junc_seq = my_seq.get_seq(reference_genome, FF[0], int(FF[1]) - 30, int(FF[1]))
                 else:
-                    temp_junc_seq = my_seq.reverse_complement(my_seq.get_seq(reference_genome, FF[0], int(FF[1]), int(FF[1]) + 20))
+                    temp_junc_seq = my_seq.reverse_complement(my_seq.get_seq(reference_genome, FF[0], int(FF[1]), int(FF[1]) + 30))
 
             temp_id2seq[F[1]] = F[2]
 
@@ -415,6 +417,9 @@ def psl_check(psl_file, key2seq, align_margin = 10000):
         for line in hin:
             F = line.rstrip('\n').split('\t')
             if F[0].isdigit() == False: continue
+            if int(F[16]) - int(F[15]) - int(F[10]) > 5: continue
+            if int(F[10]) - int(F[0]) > 5: continue
+            if int(F[11]) > 5: continue
 
             if tempID != F[9]:
                 if tempID != "":
