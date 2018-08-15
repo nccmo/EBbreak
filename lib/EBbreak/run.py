@@ -111,12 +111,15 @@ def filt_main(args):
     filt.filter_by_control(args.tumor_bp_file, args.output_file + ".tmp.filt1.txt", args.matched_control_bp_file, args.merged_control_file,
                            args.min_tumor_num_thres, args.min_median_mapq, args.min_max_clip_size, args.max_control_num_thres,
                            args.ignore_juncseq_consistency, args.permissible_range)
- 
-    filt.filter_by_allele_freq(args.output_file + ".tmp.filt1.txt", args.output_file, 
+
+    filt.filter_by_control2(args.output_file + ".tmp.filt1.txt", args.output_file + ".tmp.filt2.txt" , args.matched_control_bp_file, 
+                            args.tumor_bam, args.matched_control_bam, args.min_tumor_num_thres, args.max_control_num_thres)
+
+    filt.filter_by_allele_freq(args.output_file + ".tmp.filt2.txt", args.output_file, 
                                args.tumor_bam, args.matched_control_bam, 
                                args.min_tumor_allele_freq, args.max_control_allele_freq, args.max_fisher_pvalue)
 
-    subprocess.call(["rm", args.output_file + ".tmp.filt1.txt"])
+    #subprocess.call(["rm", args.output_file + ".tmp.filt1.txt"])
 
 
 def contig_main(args):

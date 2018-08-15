@@ -459,9 +459,9 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
         for line in hin:
             F = line.rstrip('\n').split('\t')
             key = ','.join(F[:4])
-            key2seq[key] = F[9]
+            key2seq[key] = F[13]
             print >> hout, '>' + key
-            print >> hout, F[9]
+            print >> hout, F[13]
     hout.close()
 
     #short_contig_cap3
@@ -471,9 +471,9 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
         for line in hin:
             F = line.rstrip('\n').split('\t')
             key = ','.join(F[:4])
-            key2seq2[key] = F[12]
+            key2seq2[key] = F[16]
             print >> hout, '>' + key
-            print >> hout, F[12]
+            print >> hout, F[16]
     hout.close()
 
     #long_contig_sga = F[27]
@@ -483,9 +483,9 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
         for line in hin:
             F = line.rstrip('\n').split('\t')
             key = ','.join(F[:4])
-            key2seq3[key] = F[15]
+            key2seq3[key] = F[19]
             print >> hout, '>' + key
-            print >> hout, F[15]
+            print >> hout, F[19]
 
     hout.close()
 
