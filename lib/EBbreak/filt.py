@@ -203,8 +203,11 @@ def filter_by_control2(input_file, output_file, matched_control_bp_file, tumor_b
                         juncseq_start = read.rlen - right_clipping
                         juncseq_end = min(juncseq_start + 8, read.rlen)
                         juncseq = read.seq[juncseq_start:juncseq_end]
-                        print "right" + "\t" + str(juncPos_current) + "\t" + F[1] + "\t" + juncseq
-
+                        #print "right" + "\t" + str(juncPos_current) + "\t" + F[1] + "\t" + juncseq
+                        
+                        #filter if base qualities of junction seq is low
+                        if numpy.mean(read.query_qualities[juncseq_start:juncseq_end]) < 10:
+                            continue
                         #print "right" + "\t" + juncseq
 
                         if juncseq in F[3]: 
@@ -225,9 +228,12 @@ def filter_by_control2(input_file, output_file, matched_control_bp_file, tumor_b
                         juncseq_start = left_clipping
                         juncseq_end = max(left_clipping - 8, 0)
                         juncseq = my_seq.reverse_complement(read.seq[juncseq_start:juncseq_end])
-                        print "left" + "\t" + str(juncPos_current) + "\t" + F[1] + "\t" + juncseq
+                        #print "left" + "\t" + str(juncPos_current) + "\t" + F[1] + "\t" + juncseq
                         #print "left" + "\t" + juncseq
-
+                        
+                        if numpy.mean(read.query_qualities[juncseq_start:juncseq_end]) < 10:
+                            continue
+                        
                         if juncseq in F[3]: 
                             tumor_var_read += 1
 
