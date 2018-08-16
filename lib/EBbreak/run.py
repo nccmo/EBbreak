@@ -119,13 +119,14 @@ def filt_main(args):
                                args.tumor_bam, args.matched_control_bam, 
                                args.min_tumor_allele_freq, args.max_control_allele_freq, args.max_fisher_pvalue)
 
-    #subprocess.call(["rm", args.output_file + ".tmp.filt1.txt"])
+    subprocess.call(["rm", args.output_file + ".tmp.filt1.txt"])
+    subprocess.call(["rm", args.output_file + ".tmp.filt2.txt"])
 
 
 def contig_main(args):
 
     contig.generate_contig(args.tumor_bp_filt_file, args.output_file + ".tmp.filt3.txt", 
-                          args.tumor_bp_file, args.tumor_bam, args.reference_genome, args.min_contig_length)
+                           args.tumor_bp_file, args.tumor_bam, args.reference_genome, args.min_contig_length, args.swalign_length, args.swalign_score)
 
     contig.alignment_contig(args.tumor_bp_filt_file, args.output_file + ".tmp.filt3.txt", args.output_file + ".tmp.filt4.txt", 
                             args.reference_genome, args.blat_option, args.virus_db, args.repeat_db, args.mitochondria_db, args.adapter_db)

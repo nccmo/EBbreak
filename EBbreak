@@ -162,6 +162,12 @@ contig.add_argument("--adapter_db", type = str, default = "",
 contig.add_argument("--min_contig_length", type = int, default = 0,
                   help = "threshould of minimum contig length (if the generated contig size is below this value, then filtered out) (default: %(default)s)")
 
+contig.add_argument("--swalign_length", type = int, default = 20,
+                  help = "threshould of minimum Waterman-Smith alignment length (if the generated contig size is below this value, then filtered out) (default: %(default)s)")
+
+contig.add_argument("--swalign_score", type = int, default = 35,
+                  help = "threshould of minimum Waterman-Smith alignment score (default: %(default)s)")
+
 contig.set_defaults(func = contig_main)
 ####################
 

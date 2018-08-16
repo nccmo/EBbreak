@@ -21,10 +21,13 @@ def filter_by_control(tumor_bp_file, output_file, matched_control_bp_file, merge
             F = line.rstrip('\n').split('\t')
             mapqs = [int(x) for x in F[6].split(';')]
             clip_sizes = [int(x) for x in F[7].split(';')]
+            base_qualities = [float(x) for x in F[9].split(';')]
 
             if len(mapqs) < min_support_num: continue
             if numpy.median(mapqs) < min_median_mapq: continue
             if max(clip_sizes) < min_max_clip_size: continue
+            if numpy.median(base_qualities) < 20: continue
+            if numpy.sort(base_qualities)[-2] < 30: continue
 
             # filtering using merged control file
             merged_control_filt_flag = False 
