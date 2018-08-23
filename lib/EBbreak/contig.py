@@ -7,7 +7,7 @@ import swalign
 import annot_utils.gene, annot_utils.exon
 
 
-def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path, swalign_score):
+def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path, swalign_score, juncseq):
 
     match = 2
     mismatch = -1
@@ -59,6 +59,7 @@ def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path, swalign_score):
             aln_1 = sw.align(ttseq, junc_seq)
             aln_2 = sw.align(ttseq, my_seq.reverse_complement(junc_seq))
 
+#############################
             if aln_1.score >= aln_2.score:
                 if aln_1.score > temp_score:
                     temp_contig = ttseq[aln_1.r_end:]
@@ -75,17 +76,18 @@ def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path, swalign_score):
 
             if aln_2.score > aln_1.score:
                 if aln_2.score > temp_score:
-                    temp_contig = ttseq[aln_2.r_end:]
-                    temp_all_contig = str(ttseq)
-                    temp_genome_contig = ttseq[:aln_2.r_end]
+                    temp_contig = my_seq.reverse_complement(ttseq[:aln_2.r_pos])
+                    temp_all_contig = my_seq.reverse_complement(ttseq)
+                    temp_genome_contig = my_seq.reverse_complement(ttseq[aln_2.r_pos:])
                     temp_score = aln_2.score
 
                 if aln_2.score == temp_score:
                     if len(ttseq[aln_2.r_end:]) > len(temp_contig): 
-                        temp_contig = ttseq[aln_2.r_end:]
-                        temp_all_contig = str(ttseq)
-                        temp_genome_contig = ttseq[:aln_2.r_end]
+                        temp_contig = my_seq.reverse_complement(ttseq[:aln_2.r_pos])
+                        temp_all_contig = my_seq.reverse_complement(ttseq)
+                        temp_genome_contig = my_seq.reverse_complement(ttseq[aln_2.r_pos:])
                         temp_score = aln_2.score
+###############################
 
         return temp_contig + '\t' + temp_all_contig + '\t' + temp_genome_contig + '\t' + str(temp_score)
 
@@ -95,7 +97,7 @@ def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path, swalign_score):
     # subprocess.call(["rm", "-rf", tmp_file_path + ".tmp3.assemble_input.cap*"])
 
 
-def assemble_seq_sga(readid2seq, junc_seq, tmp_file_path, swalign_score):
+def assemble_seq_sga(readid2seq, junc_seq, tmp_file_path, swalign_score, juncseq):
 
     match = 2
     mismatch = -1
@@ -162,16 +164,16 @@ def assemble_seq_sga(readid2seq, junc_seq, tmp_file_path, swalign_score):
 
                 if aln_2.score > aln_1.score:
                     if aln_2.score > temp_score:
-                        temp_contig = ttseq[aln_2.r_end:]
-                        temp_all_contig = str(ttseq)
-                        temp_genome_contig = ttseq[:aln_2.r_end]
+                        temp_contig = my_seq.reverse_complement(ttseq[:aln_2.r_pos])
+                        temp_all_contig = my_seq.reverse_complement(ttseq)
+                        temp_genome_contig = my_seq.reverse_complement(ttseq[aln_2.r_pos:])
                         temp_score = aln_2.score
 
                     if aln_2.score == temp_score:
                         if len(ttseq[aln_2.r_end:]) > len(temp_contig): 
-                            temp_contig = ttseq[aln_2.r_end:]
-                            temp_all_contig = str(ttseq)
-                            temp_genome_contig = ttseq[:aln_2.r_end]
+                            temp_contig = my_seq.reverse_complement(ttseq[:aln_2.r_pos])
+                            temp_all_contig = my_seq.reverse_complement(ttseq)
+                            temp_genome_contig = my_seq.reverse_complement(ttseq[aln_2.r_pos:])
                             temp_score = aln_2.score
 
             return temp_contig + '\t' + temp_all_contig + '\t' + temp_genome_contig + '\t' + str(temp_score)
@@ -300,10 +302,10 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
             F = line.rstrip('\n').split('\t')
             if temp_key != F[0]:
                 if len(temp_id2seq) > 0:
-                    key2contig_cap3[temp_key] = assemble_seq_cap3(temp_id2seq, temp_junc_seq, output_file, swalign_score)
+                    key2contig_cap3[temp_key] = assemble_seq_cap3(temp_id2seq, temp_junc_seq, output_file, swalign_score, juncseq)
                     #key2contig_fml_asm[temp_key] = assemble_seq_fml_asm(temp_id2seq, temp_junc_seq, output_file)
                     #key2contig_velvet[temp_key] = assemble_seq_velvet(temp_id2seq, temp_junc_seq, output_file)
-                    key2contig_sga[temp_key] = assemble_seq_sga(temp_id2seq, temp_junc_seq, output_file, swalign_score)
+                    key2contig_sga[temp_key] = assemble_seq_sga(temp_id2seq, temp_junc_seq, output_file, swalign_score, juncseq)
 
                 temp_key = F[0]
                 temp_id2seq = {}
@@ -312,14 +314,15 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
                     temp_junc_seq = my_seq.get_seq(reference_genome, FF[0], int(FF[1]) - swalign_length, int(FF[1]))
                 else:
                     temp_junc_seq = my_seq.reverse_complement(my_seq.get_seq(reference_genome, FF[0], int(FF[1]), int(FF[1]) + swalign_length))
+                juncseq = FF[3]
 
             temp_id2seq[F[1]] = F[2]
 
         if len(temp_id2seq) > 0: 
-            key2contig_cap3[temp_key] = assemble_seq_cap3(temp_id2seq, temp_junc_seq, output_file, swalign_score)
+            key2contig_cap3[temp_key] = assemble_seq_cap3(temp_id2seq, temp_junc_seq, output_file, swalign_score, juncseq)
             #key2contig_fml_asm[temp_key] = assemble_seq_fml_asm(temp_id2seq, temp_junc_seq, output_file)
             #key2contig_velvet[temp_key] = assemble_seq_velvet(temp_id2seq, temp_junc_seq, output_file)
-            key2contig_sga[temp_key] = assemble_seq_sga(temp_id2seq, temp_junc_seq, output_file, swalign_score)
+            key2contig_sga[temp_key] = assemble_seq_sga(temp_id2seq, temp_junc_seq, output_file, swalign_score, juncseq)
 
     temp_key2 = ""
     temp_id2seq2 = {}
@@ -333,7 +336,7 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
             F = line.rstrip('\n').split('\t')
             if temp_key2 != F[0]:
                 if len(temp_id2seq2) > 0:
-                    key2contig2_cap3[temp_key2] = assemble_seq_cap3(temp_id2seq2, temp_junc_seq2, output_file, swalign_score)
+                    key2contig2_cap3[temp_key2] = assemble_seq_cap3(temp_id2seq2, temp_junc_seq2, output_file, swalign_score, juncseq)
                     #key2contig2_fml_asm[temp_key] = assemble_seq_fml_asm(temp_id2seq, temp_junc_seq, output_file)
                     #key2contig2_velvet[temp_key] = assemble_seq_velvet(temp_id2seq, temp_junc_seq, output_file)
                     #key2contig_sga[temp_key] = assemble_seq_sga(temp_id2seq, temp_junc_seq, output_file)
@@ -345,11 +348,12 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
                     temp_junc_seq2 = my_seq.get_seq(reference_genome, FF[0], int(FF[1]) - swalign_length, int(FF[1]))
                 else:
                     temp_junc_seq2 = my_seq.reverse_complement(my_seq.get_seq(reference_genome, FF[0], int(FF[1]), int(FF[1]) + swalign_length))
+                juncseq = FF[3]
 
             temp_id2seq2[F[1]] = F[2]
 
         if len(temp_id2seq2) > 0: 
-            key2contig2_cap3[temp_key2] = assemble_seq_cap3(temp_id2seq2, temp_junc_seq2, output_file, swalign_score)
+            key2contig2_cap3[temp_key2] = assemble_seq_cap3(temp_id2seq2, temp_junc_seq2, output_file, swalign_score, juncseq)
             #key2contig2_fml_asm[temp_key] = assemble_seq_fml_asm(temp_id2seq, temp_junc_seq, output_file)
             #key2contig2_velvet[temp_key] = assemble_seq_velvet(temp_id2seq, temp_junc_seq, output_file)
             #key2contig_sga[temp_key] = assemble_seq_sga(temp_id2seq, temp_junc_seq, output_file)
