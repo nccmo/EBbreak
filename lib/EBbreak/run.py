@@ -113,14 +113,14 @@ def filt_main(args):
                            args.ignore_juncseq_consistency, args.permissible_range)
 
     filt.filter_by_control2(args.output_file + ".tmp.filt1.txt", args.output_file + ".tmp.filt2.txt" , args.matched_control_bp_file, 
-                            args.tumor_bam, args.matched_control_bam, args.min_tumor_num_thres, args.max_control_num_thres)
+                            args.tumor_bam, args.matched_control_bam, args.min_tumor_num_thres, args.max_control_num_thres, args.permissible_range)
 
     filt.filter_by_allele_freq(args.output_file + ".tmp.filt2.txt", args.output_file, 
                                args.tumor_bam, args.matched_control_bam, 
                                args.min_tumor_allele_freq, args.max_control_allele_freq, args.max_fisher_pvalue)
 
-    subprocess.call(["rm", args.output_file + ".tmp.filt1.txt"])
-    subprocess.call(["rm", args.output_file + ".tmp.filt2.txt"])
+    #subprocess.call(["rm", args.output_file + ".tmp.filt1.txt"])
+    #subprocess.call(["rm", args.output_file + ".tmp.filt2.txt"])
 
 
 def contig_main(args):
@@ -128,11 +128,11 @@ def contig_main(args):
     contig.generate_contig(args.tumor_bp_filt_file, args.output_file + ".tmp.filt3.txt", 
                            args.tumor_bp_file, args.tumor_bam, args.reference_genome, args.min_contig_length, args.swalign_length, args.swalign_score)
 
-    contig.alignment_contig(args.tumor_bp_filt_file, args.output_file + ".tmp.filt3.txt", args.output_file + ".tmp.filt4.txt", 
-                            args.reference_genome, args.blat_option, args.virus_db, args.repeat_db, args.mitochondria_db, args.adapter_db)
+    # contig.alignment_contig(args.tumor_bp_filt_file, args.output_file + ".tmp.filt3.txt", args.output_file + ".tmp.filt4.txt", 
+    #                         args.reference_genome, args.blat_option, args.virus_db, args.repeat_db, args.mitochondria_db, args.adapter_db)
     
-    contig.annotate_break_point(args.output_file + ".tmp.filt4.txt", args.output_file, args.genome_id, args.grc)
+    # contig.annotate_break_point(args.output_file + ".tmp.filt4.txt", args.output_file, args.genome_id, args.grc)
 
-    subprocess.call(["rm", "-f", args.output_file + ".tmp.filt3.txt"])
-    subprocess.call(["rm", "-f", args.output_file + ".tmp.filt4.txt"])
+    #subprocess.call(["rm", "-f", args.output_file + ".tmp.filt3.txt"])
+    #subprocess.call(["rm", "-f", args.output_file + ".tmp.filt4.txt"])
     

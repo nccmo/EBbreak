@@ -140,7 +140,7 @@ def filter_by_allele_freq(input_file, output_file, tumor_bam, matched_control_ba
 
 
 #####################################################################################################################
-def filter_by_control2(input_file, output_file, matched_control_bp_file, tumor_bam, normal_bam, min_support_num, max_control_num_thres):
+def filter_by_control2(input_file, output_file, matched_control_bp_file, tumor_bam, normal_bam, min_support_num, max_control_num_thres, permissible_range):
 
 
     use_matched_control = True if matched_control_bp_file != "" else False
@@ -278,13 +278,12 @@ def filter_by_control2(input_file, output_file, matched_control_bp_file, tumor_b
                                 if right_clipping2 < 2: continue
 
                                 juncPos_current2 = int(read.pos + 1) + read.alen - 1
-                                if juncPos_current2 != F[2]: continue
+                                if max(int(F[1]) - permissible_range, 0) <= int(juncPos_current2) and int(juncPos_current2) <= (int(F[1]) + permissible_range):
+                                    #juncseq_start2 = read.rlen - right_clipping2
+                                    #juncseq_end2 = min(juncseq_start2 + 8, read.rlen)
+                                    #juncseq2 = read.seq[juncseq_start2:juncseq_end2]
 
-                                juncseq_start2 = read.rlen - right_clipping2
-                                juncseq_end2 = min(juncseq_start2 + 8, read.rlen)
-                                juncseq2 = read.seq[juncseq_start2:juncseq_end2]
-
-                                if juncseq2 in F[3]: 
+                                    #if juncseq2 in F[3]: 
                                     normal_var_read += 1
 
                             if F[2] == "-":
@@ -292,13 +291,12 @@ def filter_by_control2(input_file, output_file, matched_control_bp_file, tumor_b
 
                                 if left_clipping2 < 2: continue
                                 juncPos_current2 = int(read.pos + 1)
-                                if juncPos_current2 != F[2]: continue
+                                if max(int(F[1]) - permissible_range, 0) <= int(juncPos_current2) and int(juncPos_current2) <= (int(F[1]) + permissible_range):
+                                    #juncseq_start2 = left_clipping2
+                                    #juncseq_end2 = max(left_clipping2 - 8, 0)
+                                    #juncseq2 = my_seq.reverse_complement(read.seq[juncseq_start2:juncseq_end2])
 
-                                juncseq_start2 = left_clipping2
-                                juncseq_end2 = max(left_clipping2 - 8, 0)
-                                juncseq2 = my_seq.reverse_complement(read.seq[juncseq_start2:juncseq_end2])
-
-                                if juncseq2 in F[3]: 
+                                   #if juncseq2 in F[3]: 
                                     normal_var_read += 1
 
             else:
@@ -306,6 +304,35 @@ def filter_by_control2(input_file, output_file, matched_control_bp_file, tumor_b
 
             if tumor_var_read < min_support_num: continue
             if use_matched_control and normal_var_read > max_control_num_thres: continue
+
+
+            # # get readnum from matched control file
+            # if use_matched_control:
+            #     num_matched_control = 0
+            #     tabixErrorFlag = 0
+            #     try:
+            #         # records = matched_control_db.fetch(F[0], int(F[1]) - 1, int(F[1]) + 1)
+            #         start_pos = int(F[1]) - 1 - permissible_range
+            #         if start_pos < 0: start_pos = 0
+            #         records = matched_control_db.fetch(F[0], start_pos, int(F[1]) + 1 + permissible_range)
+            #     except Exception as inst:
+            #         print >> sys.stderr, "%s: %s" % (type(inst), inst.args)
+            #         tabixErrorMsg = str(inst.args)
+            #         tabixErrorFlag = 1
+            
+            #     if tabixErrorFlag == 0:
+            #         for record_line in records:
+            #             record = record_line.split('\t')
+            #             # if record[0] == F[0] and record[1] == F[1] and record[2] == F[2]:
+            #             if record[0] == F[0] and (int(F[1]) - permissible_range) <= int(record[1]) and int(record[1]) <= (int(F[1]) + permissible_range) and record[3] == F[3]:
+            #                 if ignore_seq_consist or record[4] == F[4]:
+            #                     num_matched_control = len(record[6].split(';'))
+            
+            # else:
+            #     num_matched_control = "---"
+
+            # if use_matched_control and num_matched_control > max_control_num_thres: continue
+
 
             print >> hout, F[0] + '\t' + F[1] + '\t' + F[2] + '\t' + F[3]  + '\t' + str(tumor_var_read) + '\t' + str(normal_var_read)
 

@@ -34,6 +34,7 @@ def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path, swalign_score):
     temp_contig = ""
     temp_all_contig = ""
     temp_genome_contig = ""
+    temp_score = 0
     with open(tmp_file_path + ".tmp3.assemble_input.fa.cap.contigs", 'r') as hin:
         # Allhin = hin.read()
         # hin2 = Allhin.replace('\n', '').split(">")
@@ -56,23 +57,38 @@ def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path, swalign_score):
         for i in range(0, len(tseq)):
             ttseq = tseq[i]
             aln_1 = sw.align(ttseq, junc_seq)
-            if aln_1.score >= swalign_score:
-                ttcontig = ttseq[aln_1.r_end:]
-                gttcontig = ttseq[:aln_1.r_end]
-                if len(ttcontig) > len(temp_contig): 
-                    temp_contig = ttcontig
-                    temp_all_contig = str(ttseq)
-                    temp_genome_contig = gttcontig
             aln_2 = sw.align(ttseq, my_seq.reverse_complement(junc_seq))
-            if aln_2.score >= swalign_score:
-                ttcontig = my_seq.reverse_complement(ttseq[:aln_2.r_pos])
-                gttcontig = my_seq.reverse_complement(ttseq[aln_2.r_pos:])
-                if len(ttcontig) > len(temp_contig): 
-                    temp_contig = ttcontig
-                    temp_all_contig = str(ttseq)
-                    temp_genome_contig = gttcontig
 
-        return temp_contig + '\t' + temp_all_contig + '\t' + temp_genome_contig
+            if aln_1.score >= aln_2.score:
+                if aln_1.score > temp_score:
+                    temp_contig = ttseq[aln_1.r_end:]
+                    temp_all_contig = str(ttseq)
+                    temp_genome_contig = ttseq[:aln_1.r_end]
+                    temp_score = aln_1.score
+
+                if aln_1.score == temp_score:
+                    if len(ttseq[aln_1.r_end:]) > len(temp_contig): 
+                        temp_contig = ttseq[aln_1.r_end:]
+                        temp_all_contig = str(ttseq)
+                        temp_genome_contig = ttseq[:aln_1.r_end]
+                        temp_score = aln_1.score
+
+            if aln_2.score > aln_1.score:
+                if aln_2.score > temp_score:
+                    temp_contig = ttseq[aln_2.r_end:]
+                    temp_all_contig = str(ttseq)
+                    temp_genome_contig = ttseq[:aln_2.r_end]
+                    temp_score = aln_2.score
+
+                if aln_2.score == temp_score:
+                    if len(ttseq[aln_2.r_end:]) > len(temp_contig): 
+                        temp_contig = ttseq[aln_2.r_end:]
+                        temp_all_contig = str(ttseq)
+                        temp_genome_contig = ttseq[:aln_2.r_end]
+                        temp_score = aln_2.score
+
+        return temp_contig + '\t' + temp_all_contig + '\t' + temp_genome_contig + '\t' + str(temp_score)
+
     hin.close()
 
     # subprocess.call(["rm", "-rf", tmp_file_path + ".tmp3.assemble_input.fa"])
@@ -116,6 +132,7 @@ def assemble_seq_sga(readid2seq, junc_seq, tmp_file_path, swalign_score):
     temp_contig = ""
     temp_all_contig = ""
     temp_genome_contig = ""
+    temp_score = 0
     try:
         with open(tmp_file_path + ".tmp3.assemble_input.merged.fa", 'r') as hin:
             tseq = []
@@ -127,28 +144,43 @@ def assemble_seq_sga(readid2seq, junc_seq, tmp_file_path, swalign_score):
             for i in range(0, len(tseq)):
                 ttseq = tseq[i]
                 aln_1 = sw.align(ttseq, junc_seq)
-                if aln_1.score >= swalign_score:
-                    ttcontig = ttseq[aln_1.r_end:]
-                    gttcontig = ttseq[:aln_1.r_end]
-                    if len(ttcontig) > len(temp_contig): 
-                        temp_contig = ttcontig
-                        temp_all_contig = str(ttseq)
-                        temp_genome_contig = gttcontig
-
                 aln_2 = sw.align(ttseq, my_seq.reverse_complement(junc_seq))
-                if aln_2.score >= swalign_score:
-                    ttcontig = my_seq.reverse_complement(ttseq[:aln_2.r_pos])
-                    gttcontig = my_seq.reverse_complement(ttseq[aln_2.r_pos:])
-                    if len(ttcontig) > len(temp_contig): 
-                        temp_contig = ttcontig
-                        temp_all_contig = str(ttseq)
-                        temp_genome_contig = gttcontig
 
-            return temp_contig + '\t' + temp_all_contig + '\t' + temp_genome_contig
+                if aln_1.score >= aln_2.score:
+                    if aln_1.score > temp_score:
+                        temp_contig = ttseq[aln_1.r_end:]
+                        temp_all_contig = str(ttseq)
+                        temp_genome_contig = ttseq[:aln_1.r_end]
+                        temp_score = aln_1.score
+
+                    if aln_1.score == temp_score:
+                        if len(ttseq[aln_1.r_end:]) > len(temp_contig): 
+                            temp_contig = ttseq[aln_1.r_end:]
+                            temp_all_contig = str(ttseq)
+                            temp_genome_contig = ttseq[:aln_1.r_end]
+                            temp_score = aln_1.score
+
+                if aln_2.score > aln_1.score:
+                    if aln_2.score > temp_score:
+                        temp_contig = ttseq[aln_2.r_end:]
+                        temp_all_contig = str(ttseq)
+                        temp_genome_contig = ttseq[:aln_2.r_end]
+                        temp_score = aln_2.score
+
+                    if aln_2.score == temp_score:
+                        if len(ttseq[aln_2.r_end:]) > len(temp_contig): 
+                            temp_contig = ttseq[aln_2.r_end:]
+                            temp_all_contig = str(ttseq)
+                            temp_genome_contig = ttseq[:aln_2.r_end]
+                            temp_score = aln_2.score
+
+            return temp_contig + '\t' + temp_all_contig + '\t' + temp_genome_contig + '\t' + str(temp_score)
+
     except:
         return "" + '\t' + "" + '\t' + ""
 
     hin.close()
+
     # subprocess.call(["rm", "-rf", tmp_file_path + ".tmp3.assemble_input.merged.fa"])
     # subprocess.call(["rm", "-rf", tmp_file_path + ".tmp3.assemble_input.sai"])
     # subprocess.call(["rm", "-rf", tmp_file_path + ".tmp3.assemble_input.rsai"])
@@ -361,8 +393,8 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
             F = line.rstrip('\n').split('\t')    
             key = ','.join(F[:4])
             
-            long_contig_cap3 = key2contig_cap3[key] if key in key2contig_cap3 else "" + '\t' + "" + '\t' + ""
-            short_contig_cap3 = key2contig2_cap3[key] if key in key2contig2_cap3 else "" + '\t' + "" + '\t' + ""
+            long_contig_cap3 = key2contig_cap3[key] if key in key2contig_cap3 else "" + '\t' + "" + '\t' + ""+ '\t' + ""
+            short_contig_cap3 = key2contig2_cap3[key] if key in key2contig2_cap3 else "" + '\t' + "" + '\t' + ""+ '\t' + ""
             #if len(contig_cap3) < min_contig_length: continue
             # if contig[:8] != F[3][:8]: continue
 
@@ -375,7 +407,7 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
             #if len(contig_velvet) < min_contig_length: continue
 
 
-            long_contig_sga = key2contig_sga[key] if key in key2contig_sga else "" + '\t' + "" + '\t' + ""
+            long_contig_sga = key2contig_sga[key] if key in key2contig_sga else "" + '\t' + "" + '\t' + ""+ '\t' + ""
             #short_contig_sga = key2contig2_sga[key] if key in key2contig2_sga else "" + '\t' + "" + '\t' + ""
 
             #if len(contig_sga) < min_contig_length: continue
@@ -466,9 +498,9 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
         for line in hin:
             F = line.rstrip('\n').split('\t')
             key = ','.join(F[:4])
-            key2seq[key] = F[13]
+            key2seq[key] = F[9]
             print >> hout, '>' + key
-            print >> hout, F[13]
+            print >> hout, F[9]
     hout.close()
 
     #short_contig_cap3
@@ -478,9 +510,9 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
         for line in hin:
             F = line.rstrip('\n').split('\t')
             key = ','.join(F[:4])
-            key2seq2[key] = F[16]
+            key2seq2[key] = F[13]
             print >> hout, '>' + key
-            print >> hout, F[16]
+            print >> hout, F[13]
     hout.close()
 
     #long_contig_sga = F[27]
@@ -490,9 +522,9 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
         for line in hin:
             F = line.rstrip('\n').split('\t')
             key = ','.join(F[:4])
-            key2seq3[key] = F[19]
+            key2seq3[key] = F[17]
             print >> hout, '>' + key
-            print >> hout, F[19]
+            print >> hout, F[17]
 
     hout.close()
 
