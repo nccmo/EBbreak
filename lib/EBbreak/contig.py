@@ -191,6 +191,10 @@ def assemble_seq_sga(readid2seq, junc_seq, tmp_file_path, swalign_score, juncseq
 
 def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference_genome, min_contig_length, swalign_length, swalign_score):
 
+    """
+    function for generating contigs
+    """
+
     tumor_bp_db = pysam.TabixFile(tumor_bp_file)
 
     #readid2key gets paired-reads if either of the pair contains breakpoint
@@ -199,7 +203,7 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
     readid2key2 = {}
     with open(input_file, 'r') as hin:
         for line in hin:
-            F = line.rstrip('\n').split('\t')               
+            F = line.rstrip('\n').split('\t')
             if F[0] == "Chr": continue
 
             tabixErrorFlag = 0
@@ -221,6 +225,7 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
 
     bamfile = pysam.Samfile(tumor_bam, "rb")
 
+    #gets paired-reads if either of the pair contains breakpoint
     hout = open(output_file + ".tmp2.contig.unsorted", 'w')
     for read in bamfile.fetch():
        
@@ -276,7 +281,7 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
 
     # hout.close()
 
-
+    #sort reads
     hout = open(output_file + ".tmp2.contig.sorted", 'w')
     subprocess.call(["sort", "-k1,1", output_file + ".tmp2.contig.unsorted"], stdout = hout)
     hout.close()
@@ -442,7 +447,7 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
     subprocess.call(["rm", "-rf", output_file + ".tmp3.assemble_input.rbwt"])
 
 
-def psl_check(psl_file, key2seq, align_margin = 10000): 
+def psl_check_for_human(psl_file, key2seq, align_margin = 10000): 
 
     tempID = ""
     temp_align2score = {}
@@ -489,6 +494,52 @@ def psl_check(psl_file, key2seq, align_margin = 10000):
                 key2best_score[tempID] = temp_align2score[k]
 
     return [key2align, key2best_score, key2margin]
+
+
+
+def psl_check(psl_file, key2seq, align_margin = 10000): 
+
+    tempID = ""
+    temp_align2score = {}
+    key2align = {}
+    key2best_score = {}
+    key2margin = {}
+    with open(psl_file, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            if F[0].isdigit() == False: continue
+
+            if tempID != F[9]:
+                if tempID != "":
+                    for k, v in sorted(temp_align2score.items(), key=lambda x: x[1], reverse = False):
+                        key2align[tempID].append(k)
+                        if len(key2align[tempID]) >= 10: break
+                        if key2best_score[tempID] != float("inf") and key2margin[tempID] == float("inf"): # second key
+                            key2margin[tempID] = temp_align2score[k] - key2best_score[tempID] 
+                        if key2best_score[tempID] == float("inf"): # first key
+                            key2best_score[tempID] = temp_align2score[k]
+
+                tempID = F[9]
+                temp_align2score = {}
+                key2align[tempID] = []
+                key2best_score[tempID] = float("inf") 
+                key2margin[tempID] = float("inf")
+
+            inseq = key2seq[tempID][0:int(F[11])]
+            talign = ','.join([F[13], F[15], F[16], F[8], inseq, str(int(F[10]) - int(F[0]))])
+            if int(F[10]) - int(F[0]) < align_margin:
+                temp_align2score[talign] = int(F[10]) - int(F[0])
+
+        for k, v in sorted(temp_align2score.items(), key=lambda x: x[1], reverse = False):
+            key2align[tempID].append(k)
+            if len(key2align[tempID]) >= 10: break
+            if key2best_score[tempID] != float("inf") and key2margin[tempID] == float("inf"): # second key
+                key2margin[tempID] = temp_align2score[k] - key2best_score[tempID]
+            if key2best_score[tempID] == float("inf"): # first key
+                key2best_score[tempID] = temp_align2score[k]
+
+    return [key2align, key2best_score, key2margin]
+
 
 
 def alignment_contig(input_file, contig_file, output_file, reference_genome, blat_option, virus_db, repeat_db, mitochondria_db, adapter_db):
@@ -542,7 +593,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
         print >> sys.stderr, "blat error, error code: " + str(sRet)
         sys.exit()
 
-    key2align_human, key2bscore_human, key2margin_human = psl_check(output_file + ".tmp4.contig.alignment_check.psl", key2seq)
+    key2align_human, key2bscore_human, key2margin_human = psl_check_for_human(output_file + ".tmp4.contig.alignment_check.psl", key2seq)
 
 
     FNULL = open(os.devnull, 'w')
@@ -554,7 +605,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
         print >> sys.stderr, "blat error, error code: " + str(sRet)
         sys.exit()
 
-    key2align_human2, key2bscore_human2, key2margin_human2 = psl_check(output_file + ".tmp4.contig.alignment_check2.psl", key2seq)
+    key2align_human2, key2bscore_human2, key2margin_human2 = psl_check_for_human(output_file + ".tmp4.contig.alignment_check2.psl", key2seq)
 
 
     FNULL = open(os.devnull, 'w')
@@ -566,7 +617,7 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
         print >> sys.stderr, "blat error, error code: " + str(sRet)
         sys.exit()
 
-    key2align_human3, key2bscore_human3, key2margin_human3 = psl_check(output_file + ".tmp4.contig.alignment_check3.psl", key2seq)
+    key2align_human3, key2bscore_human3, key2margin_human3 = psl_check_for_human(output_file + ".tmp4.contig.alignment_check3.psl", key2seq)
     ################################################
 
 

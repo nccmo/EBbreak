@@ -3,7 +3,7 @@
 import sys, pysam, re, subprocess
 import numpy
 import my_seq
-# import utils
+
 
 SAre = re.compile('([^ \t\n\r\f\v,]+),(\d+),([\-\+]),(\w+),(\d+),(\d+);')
 cigarMDRe = re.compile('(\d+)([MD])')
@@ -17,7 +17,7 @@ def parse_bp_from_bam(input_bam, output_file, key_seq_size, min_major_clip_size,
     function for getting breakpoints from BAM file
     input:bam file
     output:output_file + ".bp.tmp.txt"
-    breakpoint info (juncChr, juncPos-1, juncPos, Dir (right clipping:+, left clipping:-), Juncseq, ID + ("/1" or "/2"), MAPQ, Clipping size, AlignmentSize)
+    breakpoint info (juncChr, juncPos-1, juncPos, Dir (right clipping:+, left clipping:-), Juncseq, ID + ("/1" or "/2"), MAPQ, Clipping size, AlignmentSize, Base quality of juncseq)
     """
 
     bamfile = pysam.Samfile(input_bam, "rb")
@@ -86,8 +86,8 @@ def parse_bp_from_bam(input_bam, output_file, key_seq_size, min_major_clip_size,
             juncseq = my_seq.reverse_complement(read.seq[juncseq_start:juncseq_end])
 
             #filter if base qualities of soft clipping part is low
-            if numpy.mean(read.query_qualities[juncseq_start:juncseq_end])<10:
-                continue
+            #if numpy.mean(read.query_qualities[juncseq_start:juncseq_end])<10:
+            #  continue
 
             print >> hout, '\t'.join([juncChr_current, str(juncPos_current-1), str(juncPos_current), juncDir_current, juncseq, 
                                       read.qname + ("/1" if flags[6] == "1" else "/2"), str(read.mapq), str(left_clipping), str(alignmentSize_current), str(numpy.mean(read.query_qualities[juncseq_start:juncseq_end]))])
@@ -103,7 +103,7 @@ def cluster_breakpoint(input_file, output_file, check_interval):
     """
     function for clustering breakpoints
     input:output_file + ".bp.tmp.txt"               result of "parse_bp_from_bam" function 
-    output:output_file + ".bp.clustered.tmp.txt"    breakpoint info (juncChr, juncPos-1, juncPos, Dir (right clipping:+, left clipping:-), Juncseq, IDs + ("/1" or "/2"), MAPQs, Clipping sizes, AlignmentSizes)
+    output:output_file + ".bp.clustered.tmp.txt"    breakpoint info (juncChr, juncPos-1, juncPos, Dir (right clipping:+, left clipping:-), Juncseq, IDs + ("/1" or "/2"), MAPQs, Clipping sizes, AlignmentSizes, Base quality of juncseq)
     """
 
     hout = open(output_file, 'w')
