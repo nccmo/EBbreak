@@ -159,5 +159,3 @@ def cluster_breakpoint(input_file, output_file, check_interval):
 
 
     hout.close()
-
-

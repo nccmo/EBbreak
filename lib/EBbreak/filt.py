@@ -26,8 +26,8 @@ def filter_by_merged_control(tumor_bp_file, output_file, merged_control_file,
             # remove breakpoint if supporting read does not meet the criteria below
             if numpy.median(mapqs) < min_median_mapq: continue
             if max(clip_sizes) < min_max_clip_size: continue
-            if numpy.median(base_qualities) < 20: continue
-            if numpy.sort(base_qualities)[-2] < 30: continue
+            #if numpy.median(base_qualities) < 20: continue
+            #if numpy.sort(base_qualities)[-2] < 30: continue
 
             # filtering using merged control file
             merged_control_filt_flag = False 
@@ -110,24 +110,16 @@ def filter_by_allele_freq(input_file, output_file, tumor_bam, matched_control_ba
 
 
 
-def filter_by_matched_control(input_file, output_file, matched_control_bp_file, tumor_bam, normal_bam, min_support_num, max_control_num_thres, permissible_range):
-
-    """
-    filtering with matched control
-    """
-
-    use_matched_control = True if matched_control_bp_file != "" else False
-    if use_matched_control: normal_bamfile = pysam.Samfile(normal_bam, "rb")
+def filter_by_base_quality(input_file, output_file, tumor_bam, min_support_num, permissible_range):
 
     hout = open(output_file, 'w')
-
 
     with open(input_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
 
             tumor_bamfile = pysam.Samfile(tumor_bam, "rb")
-            
+            key_baseq = []
             tumor_var_read = 0
             tabixErrorFlag = 0
             try:
@@ -174,7 +166,7 @@ def filter_by_matched_control(input_file, output_file, matched_control_bp_file, 
 
                         if juncseq in F[3]: 
                             tumor_var_read += 1
-
+                            key_baseq.append(str(numpy.mean(read.query_qualities[juncseq_start:juncseq_end])))
 
                     if F[2] == "-":
                         if left_clipping < 2: continue
@@ -192,8 +184,36 @@ def filter_by_matched_control(input_file, output_file, matched_control_bp_file, 
                         
                         if juncseq in F[3]: 
                             tumor_var_read += 1
+                            key_baseq.append(str(numpy.mean(read.query_qualities[juncseq_end:juncseq_start])))
 
 
+            if tumor_var_read < min_support_num: continue
+            if numpy.median(list(map(float, key_baseq))) < 20: continue
+            if numpy.sort(list(map(float, key_baseq)))[-2] < 30: continue
+
+            print >> hout, F[0] + '\t' + F[1] + '\t' + F[2] + '\t' + F[3]  + '\t' + str(tumor_var_read)
+
+    hin.close()
+    hout.close()
+
+
+
+def filter_by_matched_control(input_file, output_file, matched_control_bp_file, normal_bam, max_control_num_thres, permissible_range):
+
+    """
+    filtering with matched control
+    """
+
+    use_matched_control = True if matched_control_bp_file != "" else False
+    if use_matched_control: normal_bamfile = pysam.Samfile(normal_bam, "rb")
+
+
+    hout = open(output_file, 'w')
+
+    with open(input_file, 'r') as hin:
+        for line in hin:
+            
+            F = line.rstrip('\n').split('\t')
             normal_var_read = 0
 
             if use_matched_control:
@@ -247,11 +267,9 @@ def filter_by_matched_control(input_file, output_file, matched_control_bp_file, 
             else:
                 normal_var_read == "---"
 
-            if tumor_var_read < min_support_num: continue
             if use_matched_control and normal_var_read > max_control_num_thres: continue
 
-            print >> hout, F[0] + '\t' + F[1] + '\t' + F[2] + '\t' + F[3]  + '\t' + str(tumor_var_read) + '\t' + str(normal_var_read)
+            print >> hout,  F[0] + '\t' + F[1] + '\t' + F[2] + '\t' + F[3]  + '\t' + F[4] + '\t' + str(normal_var_read)
 
-    hin.close()
-    hout.close()
+
 

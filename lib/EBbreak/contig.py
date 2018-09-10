@@ -7,6 +7,76 @@ import swalign
 import annot_utils.gene, annot_utils.exon
 
 
+def assemble_seq_fml_asm(readid2seq, junc_seq, tmp_file_path):
+
+    match = 2
+    mismatch = -1
+    gap_penalty = -1
+    scoring = swalign.NucleotideScoringMatrix(match, mismatch)
+
+    sw = swalign.LocalAlignment(scoring)  # you can also choose gap penalties, etc...
+
+    hout = open(tmp_file_path + ".tmp3.assemble_input.fa", 'w')
+    for tid in sorted(readid2seq):
+        print >> hout, '>' + tid
+        print >> hout, readid2seq[tid]
+    hout.close()
+    
+    hout = open(tmp_file_path + ".tmp3.assemble_output.fq", 'w')
+    sret = subprocess.call(["fml-asm", tmp_file_path + ".tmp3.assemble_input.fa"], stdout = hout) 
+    hout.close()
+
+    if sret != 0:
+        print >> sys.stderr, "fml-asm error, error code: " + str(sret)
+        sys.exit()
+    
+    line_num = 0
+    temp_contig = ""
+    temp_all_contig = ""
+    temp_genome_contig = ""
+    with open(tmp_file_path + ".tmp3.assemble_output.fq", 'r') as hin:
+        for line in hin:
+            line_num = line_num + 1
+            if line_num % 4 == 2:
+                tseq = line.rstrip('\n')
+                
+                aln_1 = sw.align(tseq, junc_seq)
+                aln_2 = sw.align(tseq, my_seq.reverse_complement(junc_seq))
+            
+                if aln_1.score >= aln_2.score:
+                    if aln_1.score > temp_score:
+                        temp_contig = tseq[aln_1.r_end:]
+                        temp_all_contig = str(tseq)
+                        temp_genome_contig = tseq[:aln_1.r_end]
+                        temp_score = aln_1.score
+
+                    if aln_1.score == temp_score:
+                        if len(ttseq[aln_1.r_end:]) > len(temp_contig): 
+                            temp_contig = tseq[aln_1.r_end:]
+                            temp_all_contig = str(tseq)
+                            temp_genome_contig = tseq[:aln_1.r_end]
+                            temp_score = aln_1.score
+
+                if aln_2.score > aln_1.score:
+                    if aln_2.score > temp_score:
+                        temp_contig = my_seq.reverse_complement(tseq[:aln_2.r_pos])
+                        temp_all_contig = my_seq.reverse_complement(tseq)
+                        temp_genome_contig = my_seq.reverse_complement(tseq[aln_2.r_pos:])
+                        temp_score = aln_2.score
+
+                    if aln_2.score == temp_score:
+                        if len(ttseq[aln_2.r_end:]) > len(temp_contig): 
+                            temp_contig = my_seq.reverse_complement(tseq[:aln_2.r_pos])
+                            temp_all_contig = my_seq.reverse_complement(tseq)
+                            temp_genome_contig = my_seq.reverse_complement(tseq[aln_2.r_pos:])
+                            temp_score = aln_2.score
+    ###############################
+
+    return temp_contig + '\t' + temp_all_contig + '\t' + temp_genome_contig + '\t' + str(temp_score)
+    hin.close()
+
+
+
 def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path, swalign_score, juncseq):
 
     match = 2
@@ -23,7 +93,7 @@ def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path, swalign_score, juncse
     hout.close()
 
     cap3output = tmp_file_path + ".tmp3.assemble_input.fa.cap3.screen"
-    cap3input = tmp_file_path + ".tmp3.assemble_input.fa"
+    cap3input = tmp_file_path + ".tmp3.as semble_input.fa"
     sret = subprocess.Popen("cap3 %s -i 25 -j 31 -o 16 -s 251 -z 1 -c 10 > %s" % (cap3input,cap3output), shell=True).wait()
 
     if sret != 0:
@@ -89,8 +159,7 @@ def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path, swalign_score, juncse
                         temp_score = aln_2.score
 ###############################
 
-        return temp_contig + '\t' + temp_all_contig + '\t' + temp_genome_contig + '\t' + str(temp_score)
-
+    return temp_contig + '\t' + temp_all_contig + '\t' + temp_genome_contig + '\t' + str(temp_score)
     hin.close()
 
     # subprocess.call(["rm", "-rf", tmp_file_path + ".tmp3.assemble_input.fa"])
@@ -188,6 +257,95 @@ def assemble_seq_sga(readid2seq, junc_seq, tmp_file_path, swalign_score, juncseq
     # subprocess.call(["rm", "-rf", tmp_file_path + ".tmp3.assemble_input.rsai"])
     # subprocess.call(["rm", "-rf", tmp_file_path + ".tmp3.assemble_input.bwt"])
     # subprocess.call(["rm", "-rf", tmp_file_path + ".tmp3.assemble_input.rbwt"])
+
+
+def assemble_seq_velvet(readid2seq, junc_seq, tmp_file_path):
+
+    match = 2
+    mismatch = -1
+    gap_penalty = -1
+    scoring = swalign.NucleotideScoringMatrix(match, mismatch)
+
+    sw = swalign.LocalAlignment(scoring)  # you can also choose gap penalties, etc...
+
+    hout = open(tmp_file_path + ".tmp3.assemble_input.fa", 'w')
+    for tid in sorted(readid2seq):
+        print >> hout, '>' + tid
+        print >> hout, readid2seq[tid]
+    hout.close()
+    
+    os.system("mkdir -p velvet_output_dir/")
+    velvet_input = tmp_file_path + ".tmp3.assemble_input.fa"
+    sret = subprocess.Popen("velveth velvet_output_dir/ 31 %s" % (velvet_input), shell=True).wait()
+
+    if sret != 0:
+        print >> sys.stderr, "velveth error, error code: " + str(sret)
+        #sys.exit()
+
+    if sret == 0:
+        sret2 = subprocess.Popen("velvetg velvet_output_dir/", shell=True).wait()
+
+        if sret2 != 0:
+            print >> sys.stderr, "velvetg error, error code: " + str(sret)
+            #sys.exit()
+
+        line_num = 0
+        temp_contig = ""
+        temp_all_contig = ""
+        temp_genome_contig = ""
+        sys.path.append("velvet_output_dir/")
+        with open("velvet_output_dir/contigs.fa", 'r') as hin:
+            seq = str()
+            for line in hin:
+                if line[0] == ">":
+                    F = ('\t')
+                    seq = seq + F
+                else:
+                    F = (line.strip('\n'))
+                    seq = seq + F
+            tseq = seq.split('\t')
+            tseq = filter(lambda str:str != '', tseq)
+
+            for i in range(0, len(tseq)):
+                ttseq = tseq[i]
+                aln_1 = sw.align(ttseq, junc_seq)
+                aln_2 = sw.align(ttseq, my_seq.reverse_complement(junc_seq))
+
+#############################
+                if aln_1.score >= aln_2.score:
+                    if aln_1.score > temp_score:
+                        temp_contig = ttseq[aln_1.r_end:]
+                        temp_all_contig = str(ttseq)
+                        temp_genome_contig = ttseq[:aln_1.r_end]
+                        temp_score = aln_1.score
+
+                    if aln_1.score == temp_score:
+                        if len(ttseq[aln_1.r_end:]) > len(temp_contig): 
+                            temp_contig = ttseq[aln_1.r_end:]
+                            temp_all_contig = str(ttseq)
+                            temp_genome_contig = ttseq[:aln_1.r_end]
+                            temp_score = aln_1.score
+
+                if aln_2.score > aln_1.score:
+                    if aln_2.score > temp_score:
+                        temp_contig = my_seq.reverse_complement(ttseq[:aln_2.r_pos])
+                        temp_all_contig = my_seq.reverse_complement(ttseq)
+                        temp_genome_contig = my_seq.reverse_complement(ttseq[aln_2.r_pos:])
+                        temp_score = aln_2.score
+
+                    if aln_2.score == temp_score:
+                        if len(ttseq[aln_2.r_end:]) > len(temp_contig): 
+                            temp_contig = my_seq.reverse_complement(ttseq[:aln_2.r_pos])
+                            temp_all_contig = my_seq.reverse_complement(ttseq)
+                            temp_genome_contig = my_seq.reverse_complement(ttseq[aln_2.r_pos:])
+                            temp_score = aln_2.score
+###############################
+
+        return temp_contig + '\t' + temp_all_contig + '\t' + temp_genome_contig + '\t' + str(temp_score)
+        hin.close()
+        os.system("rm velvet_output_dir/*")
+
+
 
 def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference_genome, min_contig_length, swalign_length, swalign_score):
 
