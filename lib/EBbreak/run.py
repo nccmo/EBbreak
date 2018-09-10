@@ -52,7 +52,6 @@ def merge_control_main(args):
             bp_file = line.rstrip('\n')
             with gzip.open(bp_file, 'r') as hin2:
                 for line2 in hin2:
-
                     F = line2.rstrip('\n').split('\t')
                     support_num = len(F[7].split(';'))
                     if support_num < args.support_num_thres: continue 
@@ -60,7 +59,7 @@ def merge_control_main(args):
                 
 
     hout = open(args.output_file + ".sorted.txt", 'w')
-    s_ret = subprocess.call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k4,4", "-k5,5", args.output_file + ".unsorted.txt"], stdout = hout)
+    s_ret = subprocess.call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k4,4", args.output_file + ".unsorted.txt"], stdout = hout)
     hout.close()
 
     if s_ret != 0:
@@ -74,7 +73,7 @@ def merge_control_main(args):
         temp_read_num = []
         for line in hin:
             F = line.rstrip('\n').split('\t')
-            key = F[0] + '\t' + F[1] + '\t' + F[2] + '\t' + F[3] + '\t' + F[4]
+            key = F[0] + '\t' + F[1] + '\t' + F[2] + '\t' + F[3]
             support_num = int(F[5])
             if key != temp_key:
                 if temp_key != "":
@@ -112,8 +111,8 @@ def merge_control_main(args):
 
 def filt_main(args):
 
-    #filt.filter_by_merged_control(args.tumor_bp_file, args.output_file + ".tmp.filt1.txt", args.merged_control_file,
-    #                              args.min_median_mapq, args.min_max_clip_size, args.ignore_juncseq_consistency, args.permissible_range)
+    filt.filter_by_merged_control(args.tumor_bp_file, args.output_file + ".tmp.filt1.txt", args.merged_control_file,
+                                  args.min_median_mapq, args.min_max_clip_size, args.permissible_range)
 
     filt.filter_by_base_quality(args.output_file + ".tmp.filt1.txt", args.output_file + ".tmp.filt2.txt" , args.tumor_bam, args.min_tumor_num_thres, 
                                   args.permissible_range)

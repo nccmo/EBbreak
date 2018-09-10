@@ -375,7 +375,8 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
             if tabixErrorFlag == 0:
                 for record_line in records:
                     record = record_line.split('\t')
-                    if record[0] == F[0] and (int(record[1])+1) == int(F[1]) and record[3] == F[2] and record[4] == F[3]:
+                    if record[0] == F[0] and (int(record[1])+1) == int(F[1]) and record[3] == F[2]:
+                    #if record[0] == F[0] and (int(record[1])+1) == int(F[1]) and record[3] == F[2] and record[4] == F[3]:
                         for readid in record[5].split(';'):
                             readid2key[re.sub(r'/\d$', '', readid)] = ','.join(F[:4])
                             readid2key2[readid] =  ','.join(F[:4])

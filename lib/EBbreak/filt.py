@@ -6,7 +6,7 @@ from scipy import stats
 import my_seq
 
 def filter_by_merged_control(tumor_bp_file, output_file, merged_control_file,
-                             min_median_mapq, min_max_clip_size, ignore_seq_consist, permissible_range):
+                             min_median_mapq, min_max_clip_size, permissible_range):
 
     """
     filtering with merged control
@@ -21,7 +21,6 @@ def filter_by_merged_control(tumor_bp_file, output_file, merged_control_file,
             F = line.rstrip('\n').split('\t')
             mapqs = [int(x) for x in F[6].split(';')]
             clip_sizes = [int(x) for x in F[7].split(';')]
-            base_qualities = [float(x) for x in F[9].split(';')]
 
             # remove breakpoint if supporting read does not meet the criteria below
             if numpy.median(mapqs) < min_median_mapq: continue
@@ -48,8 +47,8 @@ def filter_by_merged_control(tumor_bp_file, output_file, merged_control_file,
                         record = record_line.split('\t')
                         # if record[0] == F[0] and record[1] == F[1] and record[2] == F[2]:
                         if record[0] == F[0] and (int(F[1]) - permissible_range) <= int(record[1]) and int(record[1]) <= (int(F[1]) + permissible_range) and record[3] == F[3]:
-                            if ignore_seq_consist or record[4] == F[4]:
-                                merged_control_filt_flag = True
+                            #if ignore_seq_consist or record[4] == F[4]:
+                            merged_control_filt_flag = True
 
             if merged_control_filt_flag: continue
 
