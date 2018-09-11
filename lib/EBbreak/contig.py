@@ -93,7 +93,7 @@ def assemble_seq_cap3(readid2seq, junc_seq, tmp_file_path, swalign_score, juncse
     hout.close()
 
     cap3output = tmp_file_path + ".tmp3.assemble_input.fa.cap3.screen"
-    cap3input = tmp_file_path + ".tmp3.as semble_input.fa"
+    cap3input = tmp_file_path + ".tmp3.assemble_input.fa"
     sret = subprocess.Popen("cap3 %s -i 25 -j 31 -o 16 -s 251 -z 1 -c 10 > %s" % (cap3input,cap3output), shell=True).wait()
 
     if sret != 0:

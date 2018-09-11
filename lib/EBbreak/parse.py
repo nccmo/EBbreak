@@ -116,7 +116,7 @@ def cluster_breakpoint(input_file, output_file, check_interval):
     key2mapq = {}
     key2clipsize = {}
     key2alnsize = {}
-    key2baseq = {}
+    #key2baseq = {}
 
     with open(input_file, 'r') as hin:
         for line in hin:
@@ -125,8 +125,8 @@ def cluster_breakpoint(input_file, output_file, check_interval):
             if tmp_chr != F[0] or int(F[1]) - tmp_pos > check_interval:
                 del_list = []
                 for key in key2read:
-                    print >> hout, key + '\t' + ';'.join(key2read[key]) + '\t' + ';'.join(key2mapq[key]) + '\t' + \
-                                   ';'.join(key2clipsize[key]) + '\t' + ';'.join(key2alnsize[key]) + '\t' + ';'.join(key2baseq[key])
+                    print >> hout, key + '\t' + ';'.join(list(set(key2juncseq[key]))) + '\t' + ';'.join(key2read[key]) + '\t' + ';'.join(key2mapq[key]) + '\t' + \
+                                   ';'.join(key2clipsize[key]) + '\t' + ';'.join(key2alnsize[key])
                     del_list.append(key)
 
                 for key in del_list:
@@ -135,7 +135,7 @@ def cluster_breakpoint(input_file, output_file, check_interval):
                     del key2mapq[key]
                     del key2clipsize[key]
                     del key2alnsize[key]
-                    del key2baseq[key]
+                    #del key2baseq[key]
 
                 tmp_chr = F[0]  
                 tmp_pos = int(F[1])
@@ -146,19 +146,19 @@ def cluster_breakpoint(input_file, output_file, check_interval):
             if key not in key2mapq: key2mapq[key] = []
             if key not in key2clipsize: key2clipsize[key] = []
             if key not in key2alnsize: key2alnsize[key] = []
-            if key not in key2baseq: key2baseq[key] = []
+            #if key not in key2baseq: key2baseq[key] = []
 
             key2juncseq[key].append(F[4])
             key2read[key].append(F[5])
             key2mapq[key].append(F[6])
             key2clipsize[key].append(F[7])
             key2alnsize[key].append(F[8])
-            key2baseq[key].append(F[9])
+            #key2baseq[key].append(F[9])
 
     # final flush
     for key in key2read:
-        print >> hout, key + '\t' + ';'.join(key2juncseq[key]) + '\t' + ';'.join(key2read[key]) + '\t' + ';'.join(key2mapq[key]) + '\t' + \
-                       ';'.join(key2clipsize[key]) + '\t' + ';'.join(key2alnsize[key]) + '\t' + ';'.join(key2baseq[key])
+        print >> hout, key + '\t' + ';'.join(list(set(key2juncseq[key]))) + '\t' + ';'.join(key2read[key]) + '\t' + ';'.join(key2mapq[key]) + '\t' + \
+                       ';'.join(key2clipsize[key]) + '\t' + ';'.join(key2alnsize[key])
 
 
     hout.close()
