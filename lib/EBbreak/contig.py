@@ -606,6 +606,113 @@ def generate_contig(input_file, output_file, tumor_bp_file, tumor_bam, reference
     subprocess.call(["rm", "-rf", output_file + ".tmp3.assemble_input.rbwt"])
 
 
+def left_psl_check_for_human(psl_file, key2seq, align_margin = 10000): 
+
+    tempID = ""
+    temp_align2score = {}
+    key2align = {}
+    key2best_score = {}
+    key2margin = {}
+    with open(psl_file, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            if F[0].isdigit() == False: continue
+            
+            # T Gap Bases
+            if int(F[7]) >= 3: continue
+            # Q gap bases
+            if int(F[5]) >= 3: continue
+            # Q start
+            if int(F[11]) >= 5: continue
+            # mismatch
+            if int(F[2]) >= 3: continue
+
+
+
+            if tempID != F[9]:
+                if tempID != "":
+                    for k, v in sorted(temp_align2score.items(), key=lambda x: x[1], reverse = False):
+                        key2align[tempID].append(k)
+                        if len(key2align[tempID]) >= 10: break
+                        if key2best_score[tempID] != float("inf") and key2margin[tempID] == float("inf"): # second key
+                            key2margin[tempID] = temp_align2score[k] - key2best_score[tempID] 
+                        if key2best_score[tempID] == float("inf"): # first key
+                            key2best_score[tempID] = temp_align2score[k]
+
+                tempID = F[9]
+                temp_align2score = {}
+                key2align[tempID] = []
+                key2best_score[tempID] = float("inf") 
+                key2margin[tempID] = float("inf")
+
+            inseq = key2seq[tempID][0:int(F[11])]
+            talign = ','.join([F[13], F[15], F[16], F[8], inseq, str(int(F[10]) - int(F[0])), F[2], F[5], F[7]])
+            if int(F[10]) - int(F[0]) < align_margin:
+                temp_align2score[talign] = int(F[10]) - int(F[0])
+
+        for k, v in sorted(temp_align2score.items(), key=lambda x: x[1], reverse = False):
+            key2align[tempID].append(k)
+            if len(key2align[tempID]) >= 10: break
+            if key2best_score[tempID] != float("inf") and key2margin[tempID] == float("inf"): # second key
+                key2margin[tempID] = temp_align2score[k] - key2best_score[tempID]
+            if key2best_score[tempID] == float("inf"): # first key
+                key2best_score[tempID] = temp_align2score[k]
+
+    return [key2align, key2best_score, key2margin]
+
+
+def right_psl_check_for_human(psl_file, key2seq, align_margin = 10000): 
+
+    tempID = ""
+    temp_align2score = {}
+    key2align = {}
+    key2best_score = {}
+    key2margin = {}
+    with open(psl_file, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            if F[0].isdigit() == False: continue
+            
+            # T Gap Bases
+            if int(F[7]) >= 3: continue
+            # Q gap bases
+            if int(F[5]) >= 3: continue
+            # Q size - Q end
+            if (int(F[10]) - int(F[12]) + 1) >= 5: continue
+            # mismatch
+            if int(F[2]) >= 3: continue
+
+            if tempID != F[9]:
+                if tempID != "":
+                    for k, v in sorted(temp_align2score.items(), key=lambda x: x[1], reverse = False):
+                        key2align[tempID].append(k)
+                        if len(key2align[tempID]) >= 10: break
+                        if key2best_score[tempID] != float("inf") and key2margin[tempID] == float("inf"): # second key
+                            key2margin[tempID] = temp_align2score[k] - key2best_score[tempID] 
+                        if key2best_score[tempID] == float("inf"): # first key
+                            key2best_score[tempID] = temp_align2score[k]
+
+                tempID = F[9]
+                temp_align2score = {}
+                key2align[tempID] = []
+                key2best_score[tempID] = float("inf") 
+                key2margin[tempID] = float("inf")
+
+            inseq = key2seq[tempID][0:int(F[11])]
+            talign = ','.join([F[13], F[15], F[16], F[8], inseq, str(int(F[10]) - int(F[0])), F[2], F[5], F[7]])
+            if int(F[10]) - int(F[0]) < align_margin:
+                temp_align2score[talign] = int(F[10]) - int(F[0])
+
+        for k, v in sorted(temp_align2score.items(), key=lambda x: x[1], reverse = False):
+            key2align[tempID].append(k)
+            if len(key2align[tempID]) >= 10: break
+            if key2best_score[tempID] != float("inf") and key2margin[tempID] == float("inf"): # second key
+                key2margin[tempID] = temp_align2score[k] - key2best_score[tempID]
+            if key2best_score[tempID] == float("inf"): # first key
+                key2best_score[tempID] = temp_align2score[k]
+
+    return [key2align, key2best_score, key2margin]
+
 def psl_check_for_human(psl_file, key2seq, align_margin = 10000): 
 
     tempID = ""
@@ -640,7 +747,8 @@ def psl_check_for_human(psl_file, key2seq, align_margin = 10000):
                 key2margin[tempID] = float("inf")
 
             inseq = key2seq[tempID][0:int(F[11])]
-            talign = ','.join([F[13], F[15], F[16], F[8], inseq, str(int(F[10]) - int(F[0]))])
+            #talign = ','.join([F[13], F[15], F[16], F[8], inseq, str(int(F[10]) - int(F[0])) ])
+            talign = ','.join([F[13], F[15], F[16], F[8], inseq, str(int(F[10]) - int(F[0])), F[2], F[5], F[7]])
             if int(F[10]) - int(F[0]) < align_margin:
                 temp_align2score[talign] = int(F[10]) - int(F[0])
 
@@ -685,7 +793,7 @@ def psl_check(psl_file, key2seq, align_margin = 10000):
                 key2margin[tempID] = float("inf")
 
             inseq = key2seq[tempID][0:int(F[11])]
-            talign = ','.join([F[13], F[15], F[16], F[8], inseq, str(int(F[10]) - int(F[0]))])
+            talign = ','.join([F[13], F[15], F[16], F[8], inseq, str(int(F[10]) - int(F[0])), F[2], F[5], F[7]])
             if int(F[10]) - int(F[0]) < align_margin:
                 temp_align2score[talign] = int(F[10]) - int(F[0])
 
@@ -752,8 +860,8 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
         print >> sys.stderr, "blat error, error code: " + str(sRet)
         sys.exit()
 
-    key2align_human, key2bscore_human, key2margin_human = psl_check_for_human(output_file + ".tmp4.contig.alignment_check.psl", key2seq)
-
+    key2align_left_human, key2bscore_left_human, key2margin_left_human = left_psl_check_for_human(output_file + ".tmp4.contig.alignment_check.psl", key2seq)
+    key2align_right_human, key2bscore_right_human, key2margin_right_human = right_psl_check_for_human(output_file + ".tmp4.contig.alignment_check.psl", key2seq)
 
     FNULL = open(os.devnull, 'w')
     sret = subprocess.call(blat_cmds + [reference_genome, output_file + ".tmp4.contig.alignment_check2.fa",
@@ -764,7 +872,8 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
         print >> sys.stderr, "blat error, error code: " + str(sRet)
         sys.exit()
 
-    key2align_human2, key2bscore_human2, key2margin_human2 = psl_check_for_human(output_file + ".tmp4.contig.alignment_check2.psl", key2seq)
+    key2align_left_human2, key2bscore_left_human2, key2margin_left_human2 = left_psl_check_for_human(output_file + ".tmp4.contig.alignment_check2.psl", key2seq)
+    key2align_right_human2, key2bscore_right_human2, key2margin_right_human2 = right_psl_check_for_human(output_file + ".tmp4.contig.alignment_check2.psl", key2seq)
 
 
     FNULL = open(os.devnull, 'w')
@@ -776,7 +885,8 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
         print >> sys.stderr, "blat error, error code: " + str(sRet)
         sys.exit()
 
-    key2align_human3, key2bscore_human3, key2margin_human3 = psl_check_for_human(output_file + ".tmp4.contig.alignment_check3.psl", key2seq)
+    key2align_left_human3, key2bscore_left_human3, key2margin_left_human3 = left_psl_check_for_human(output_file + ".tmp4.contig.alignment_check3.psl", key2seq)
+    key2align_right_human3, key2bscore_right_human3, key2margin_right_human3 = right_psl_check_for_human(output_file + ".tmp4.contig.alignment_check3.psl", key2seq)
     ################################################
 
 
@@ -975,15 +1085,15 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
     hout = open(output_file, 'w')    
     with open(input_file, 'r') as hin:
         header = hin.readline().rstrip('\n')
-        print >> hout, header + '\t' + '\t'.join(["Long_Contig_Cap3", "Junc_Seq_Consistency", "Human_Alignment", "Human_Mismatch", "Human_Margin",
+        print >> hout, header + '\t' + '\t'.join(["Long_Contig_Cap3", "Junc_Seq_Consistency", "Human_left_Alignment", "Human_left_Mismatch", "Human_left_Margin", "Human_right_Alignment", "Human_right_Mismatch", "Human_right_Margin",
                                                   "Virus_Alignment", "Virus_Mismatch", "Virus_Margin", "Repeat_Alignment", "Repeat_Mismatch", "Repeat_Margin",
                                                   "Mitochondria_Alignment", "Mitochondria_Mismatch", "Mitochondria_Margin",
                                                   "Adapter_Alignment", "Adapter_Mismatch", "Adapter_Margin",
-                                                  "Short_Contig_Cap3", "Junc_Seq_Consistency", "Human_Alignment", "Human_Mismatch", "Human_Margin",
+                                                  "Short_Contig_Cap3", "Junc_Seq_Consistency", "Human_left_Alignment", "Human_left_Mismatch", "Human_left_argin", "Human_right_Alignment", "Human_right_Mismatch", "Human_right_Margin",
                                                   "Virus_Alignment", "Virus_Mismatch", "Virus_Margin", "Repeat_Alignment", "Repeat_Mismatch", "Repeat_Margin",
                                                   "Mitochondria_Alignment", "Mitochondria_Mismatch", "Mitochondria_Margin",
                                                   "Adapter_Alignment", "Adapter_Mismatch", "Adapter_Margin",
-                                                  "Long_Contig_SGA", "Junc_Seq_Consistency", "Human_Alignment", "Human_Mismatch", "Human_Margin",
+                                                  "Long_Contig_SGA", "Junc_Seq_Consistency", "Human_left_Alignment", "Human_left_Mismatch", "Human_left_Margin", "Human_right_Alignment", "Human_right_Mismatch", "Human_right_Margin",
                                                   "Virus_Alignment", "Virus_Mismatch", "Virus_Margin", "Repeat_Alignment", "Repeat_Mismatch", "Repeat_Margin",
                                                   "Mitochondria_Alignment", "Mitochondria_Mismatch", "Mitochondria_Margin",
                                                   "Adapter_Alignment", "Adapter_Mismatch", "Adapter_Margin",
@@ -993,18 +1103,26 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
             F = line.rstrip('\n').split('\t')
             key = ','.join(F[:4])
 
-            seq = key2seq[key] if key in key2seq and len(key2seq[key]) > 0 else "---"
-            pair_seq1 = key2seq2[key] if key in key2seq2 and len(key2seq2[key]) > 0 else "---"
-            pair_seq2 = key2seq3[key] if key in key2seq3 and len(key2seq3[key]) > 0 else "---"
+            seq1 = key2seq[key] if key in key2seq and len(key2seq[key]) > 0 else "---"
+            seq2 = key2seq2[key] if key in key2seq2 and len(key2seq2[key]) > 0 else "---"
+            seq3 = key2seq3[key] if key in key2seq3 and len(key2seq3[key]) > 0 else "---"
 
-            junc_seq_consistency1 = "TRUE" if seq[:8] == F[3][:8] else "FALSE"
-            junc_seq_consistency2 = "TRUE" if pair_seq1[:8] == F[3][:8] else "FALSE"
-            junc_seq_consistency3 = "TRUE" if pair_seq2[:8] == F[3][:8] else "FALSE"
+            seq1_len = len(seq1) if seq1 != "---" else 0
+            seq2_len = len(seq2) if seq2 != "---" else 0
+            seq3_len = len(seq3) if seq3 != "---" else 0
 
-            align_human = ';'.join(key2align_human[key]) if key in key2align_human and len(key2align_human[key]) > 0 else "---"
-            bscore_human = str(key2bscore_human[key]) if key in key2bscore_human and key2bscore_human[key] != float("inf") else "---"
-            margin_human = str(key2margin_human[key]) if key in key2margin_human and key2margin_human[key] != float("inf") else "---"
+            junc_seq_consistency1 = "TRUE" if seq1[:8] == F[3][:8] else "FALSE"
+            junc_seq_consistency2 = "TRUE" if seq2[:8] == F[3][:8] else "FALSE"
+            junc_seq_consistency3 = "TRUE" if seq3[:8] == F[3][:8] else "FALSE"
+
+            align_left_human = ';'.join(key2align_left_human[key]) if key in key2align_left_human and len(key2align_left_human[key]) > 0 else "---"
+            bscore_left_human = str(key2bscore_left_human[key]) if key in key2bscore_left_human and key2bscore_left_human[key] != float("inf") else "---"
+            margin_left_human = str(key2margin_left_human[key]) if key in key2margin_left_human and key2margin_left_human[key] != float("inf") else "---"
  
+            align_right_human = ';'.join(key2align_right_human[key]) if key in key2align_right_human and len(key2align_right_human[key]) > 0 else "---"
+            bscore_right_human = str(key2bscore_right_human[key]) if key in key2bscore_right_human and key2bscore_right_human[key] != float("inf") else "---"
+            margin_right_human = str(key2margin_right_human[key]) if key in key2margin_right_human and key2margin_right_human[key] != float("inf") else "---"
+
             align_virus = ';'.join(key2align_virus[key]) if key in key2align_virus and len(key2align_virus[key]) > 0 else "---"
             bscore_virus = str(key2bscore_virus[key]) if key in key2bscore_virus and key2bscore_virus[key] != float("inf") else "---"
             margin_virus = str(key2margin_virus[key]) if key in key2margin_virus and key2margin_virus[key] != float("inf") else "---"
@@ -1021,10 +1139,14 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
             bscore_adapter = str(key2bscore_adapter[key]) if key in key2bscore_adapter and key2bscore_adapter[key] != float("inf") else "---"
             margin_adapter = str(key2margin_adapter[key]) if key in key2margin_adapter and key2margin_adapter[key] != float("inf") else "---"
 
-            align_human2 = ';'.join(key2align_human2[key]) if key in key2align_human2 and len(key2align_human2[key]) > 0 else "---"
-            bscore_human2 = str(key2bscore_human2[key]) if key in key2bscore_human2 and key2bscore_human2[key] != float("inf") else "---"
-            margin_human2 = str(key2margin_human2[key]) if key in key2margin_human2 and key2margin_human2[key] != float("inf") else "---"
+            align_left_human2 = ';'.join(key2align_left_human2[key]) if key in key2align_left_human2 and len(key2align_left_human2[key]) > 0 else "---"
+            bscore_left_human2 = str(key2bscore_left_human2[key]) if key in key2bscore_left_human2 and key2bscore_left_human2[key] != float("inf") else "---"
+            margin_left_human2 = str(key2margin_left_human2[key]) if key in key2margin_left_human2 and key2margin_left_human2[key] != float("inf") else "---"
  
+            align_right_human2 = ';'.join(key2align_right_human2[key]) if key in key2align_right_human2 and len(key2align_right_human2[key]) > 0 else "---"
+            bscore_right_human2 = str(key2bscore_right_human2[key]) if key in key2bscore_right_human2 and key2bscore_right_human2[key] != float("inf") else "---"
+            margin_right_human2 = str(key2margin_right_human2[key]) if key in key2margin_right_human2 and key2margin_right_human2[key] != float("inf") else "---"
+
             align_virus2 = ';'.join(key2align_virus2[key]) if key in key2align_virus2 and len(key2align_virus2[key]) > 0 else "---"
             bscore_virus2 = str(key2bscore_virus2[key]) if key in key2bscore_virus2 and key2bscore_virus2[key] != float("inf") else "---"
             margin_virus2 = str(key2margin_virus2[key]) if key in key2margin_virus2 and key2margin_virus2[key] != float("inf") else "---"
@@ -1041,10 +1163,14 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
             bscore_adapter2 = str(key2bscore_adapter2[key]) if key in key2bscore_adapter2 and key2bscore_adapter2[key] != float("inf") else "---"
             margin_adapter2 = str(key2margin_adapter2[key]) if key in key2margin_adapter2 and key2margin_adapter2[key] != float("inf") else "---"
 
-            align_human3 = ';'.join(key2align_human3[key]) if key in key2align_human3 and len(key2align_human3[key]) > 0 else "---"
-            bscore_human3 = str(key2bscore_human3[key]) if key in key2bscore_human3 and key2bscore_human3[key] != float("inf") else "---"
-            margin_human3 = str(key2margin_human3[key]) if key in key2margin_human3 and key2margin_human3[key] != float("inf") else "---"
- 
+            align_left_human3 = ';'.join(key2align_left_human3[key]) if key in key2align_left_human3 and len(key2align_left_human3[key]) > 0 else "---"
+            bscore_left_human3 = str(key2bscore_left_human3[key]) if key in key2bscore_left_human3 and key2bscore_left_human3[key] != float("inf") else "---"
+            margin_left_human3 = str(key2margin_left_human3[key]) if key in key2margin_left_human3 and key2margin_left_human3[key] != float("inf") else "---"
+
+            align_right_human3 = ';'.join(key2align_right_human3[key]) if key in key2align_right_human3 and len(key2align_right_human3[key]) > 0 else "---"
+            bscore_right_human3 = str(key2bscore_right_human3[key]) if key in key2bscore_right_human3 and key2bscore_right_human3[key] != float("inf") else "---"
+            margin_right_human3 = str(key2margin_right_human3[key]) if key in key2margin_right_human3 and key2margin_right_human3[key] != float("inf") else "---"
+
             align_virus3 = ';'.join(key2align_virus3[key]) if key in key2align_virus3 and len(key2align_virus3[key]) > 0 else "---"
             bscore_virus3 = str(key2bscore_virus3[key]) if key in key2bscore_virus3 and key2bscore_virus3[key] != float("inf") else "---"
             margin_virus3 = str(key2margin_virus3[key]) if key in key2margin_virus3 and key2margin_virus3[key] != float("inf") else "---"
@@ -1062,13 +1188,13 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
             margin_adapter3 = str(key2margin_adapter3[key]) if key in key2margin_adapter3 and key2margin_adapter3[key] != float("inf") else "---"
 
 
-            print >> hout, '\t'.join(F) + '\t' + seq + '\t' + junc_seq_consistency1 + '\t' + align_human + '\t' + bscore_human + '\t' + margin_human + '\t' + \
+            print >> hout, '\t'.join(F) + '\t' + seq1 + '\t' + str(seq1_len) + '\t' + junc_seq_consistency1 + '\t' + align_left_human + '\t' + bscore_left_human + '\t' + margin_left_human + '\t' + align_right_human + '\t' + bscore_right_human + '\t' + margin_right_human + '\t' + \
                            align_virus + '\t' + bscore_virus + '\t' + margin_virus + '\t' + align_repeat + '\t' + bscore_repeat + '\t' + margin_repeat + '\t' + \
                            align_mitochondria + '\t' + bscore_mitochondria + '\t' + margin_mitochondria + '\t' + align_adapter + '\t' + bscore_adapter + '\t' + margin_adapter + '\t' + \
-                           pair_seq1 + '\t' + junc_seq_consistency2 + '\t' + align_human2 + '\t' + bscore_human2 + '\t' + margin_human2 + '\t' + \
+                           seq2 + '\t' + str(seq2_len) + '\t' + junc_seq_consistency2 + '\t' + align_left_human2 + '\t' + bscore_left_human2 + '\t' + margin_left_human2 + '\t' + align_right_human2 + '\t' + bscore_right_human2 + '\t' + margin_right_human2 + '\t' +\
                            align_virus2 + '\t' + bscore_virus2 + '\t' + margin_virus2 + '\t' + align_repeat2 + '\t' + bscore_repeat2 + '\t' + margin_repeat2 + '\t' + \
                            align_mitochondria2 + '\t' + bscore_mitochondria2 + '\t' + margin_mitochondria2 + '\t' + align_adapter2 + '\t' + bscore_adapter2 + '\t' + margin_adapter2 + '\t' + \
-                           pair_seq2 + '\t' + junc_seq_consistency3 + '\t' + align_human3 + '\t' + bscore_human3 + '\t' + margin_human3 + '\t' + \
+                           seq3 + '\t' + str(seq3_len) + '\t' + junc_seq_consistency3 + '\t' + align_left_human3 + '\t' + bscore_left_human3 + '\t' + margin_left_human3 + '\t' + align_right_human3 + '\t' + bscore_right_human3 + '\t' + margin_right_human3 + '\t' +\
                            align_virus3 + '\t' + bscore_virus3 + '\t' + margin_virus3 + '\t' + align_repeat3 + '\t' + bscore_repeat3 + '\t' + margin_repeat3 + '\t' + \
                            align_mitochondria3 + '\t' + bscore_mitochondria3 + '\t' + margin_mitochondria3 + '\t' + align_adapter3 + '\t' + bscore_adapter3 + '\t' + margin_adapter3
 
@@ -1094,75 +1220,3 @@ def alignment_contig(input_file, contig_file, output_file, reference_genome, bla
     subprocess.call(["rm", "-rf", output_file + ".tmp4.contig.alignment_check_repeat3.psl"])
     subprocess.call(["rm", "-rf", output_file + ".tmp4.contig.alignment_check_mitochondria3.psl"])
     subprocess.call(["rm", "-rf", output_file + ".tmp4.contig.alignment_check_adapter3.psl"])
-
-
-def annotate_break_point(input_file, output_file, genome_id, is_grc):
-
-    annot_utils.gene.make_gene_info(output_file + ".tmp.refGene.bed.gz", "refseq", genome_id, is_grc, False)
-    annot_utils.exon.make_exon_info(output_file + ".tmp.refExon.bed.gz", "refseq", genome_id, is_grc, False)
-
-    gene_tb = pysam.TabixFile(output_file + ".tmp.refGene.bed.gz")
-    exon_tb = pysam.TabixFile(output_file + ".tmp.refExon.bed.gz")
-
-    hout = open(output_file, 'w')
-    header2ind = {}
-    with open(input_file, 'r') as hin:
-        header = hin.readline().rstrip('\n').split('\t')
-        # for (i, cname) in enumerate(header):
-        #     header2ind[cname] = i
-
-        print >> hout, '\t'.join(["Chr", "Pos", "Dir", "Junc_Seq", "Gene", "Exon"] + header[4:])
-        for line in hin:
-            F = line.rstrip('\n').split('\t')
-
-            ##########
-            # check gene annotation
-            tabixErrorFlag = 0
-            try:
-                records = gene_tb.fetch("chr"+str(F[0]), int(F[1]) - 1, int(F[1]) + 1)
-            except Exception as inst:
-                # print >> sys.stderr, "%s: %s at the following key:" % (type(inst), inst.args)
-                # print >> sys.stderr, '\t'.join(F)
-                tabixErrorFlag = 1
-
-            gene = [];
-            if tabixErrorFlag == 0:
-                for record_line in records:
-                    record = record_line.split('\t')
-                    gene.append(record[3])
-
-            gene = list(set(gene))
-            if len(gene) == 0: gene.append("---")  
-
-            ##########
-            # check gene annotation
-            tabixErrorFlag = 0
-            try:
-                records = exon_tb.fetch("chr"+str(F[0]), int(F[1]) - 1, int(F[1]) + 1)
-            except Exception as inst:
-                # print >> sys.stderr, "%s: %s at the following key:" % (type(inst), inst.args)
-                # print >> sys.stderr, '\t'.join(F)
-                tabixErrorFlag = 1
-                
-            exon = [];
-            if tabixErrorFlag == 0:
-                for record_line in records:
-                    record = record_line.split('\t')
-                    exon.append(record[3])
-                    
-            exon = list(set(exon))
-            if len(exon) == 0: exon.append("---")
-
-            print >> hout, '\t'.join(F[:4]) + '\t' + \
-                           ','.join(gene) + '\t' + ';'.join(exon) + '\t' + '\t'.join(F[4:])
-
-    hin.close()
-    hout.close()
-    gene_tb.close()
-    exon_tb.close()
-
-    subprocess.call(["rm", "-rf", output_file + ".tmp.refGene.bed.gz"])
-    subprocess.call(["rm", "-rf", output_file + ".tmp.refExon.bed.gz"])
-    subprocess.call(["rm", "-rf", output_file + ".tmp.refGene.bed.gz.tbi"])
-    subprocess.call(["rm", "-rf", output_file + ".tmp.refExon.bed.gz.tbi"])
-    
